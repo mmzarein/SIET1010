@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# Infinite loop to reload the app
+while true; do
+    # Run the Kivy app
+    python main.py
+
+    # Check if the last command (python main.py) exited with a non-zero status
+    if [ $? -ne 0 ]; then
+        echo "Error detected, exiting loop."
+        break
+    fi
+
+    # Optional: add a small delay to avoid potential race conditions
+    sleep 1
+done
+

@@ -1,0 +1,141 @@
+#: kivy 2.3.1
+
+
+<HomeScreen>:
+    name: 'home'
+
+    MDBoxLayout:
+        orientation: 'vertical'
+
+        MDBoxLayout:
+            size_hint: 1, .3
+            orientation: 'vertical'
+            md_bg_color: root.manager.stale_blue
+            padding: 20
+
+            MonoLabel:
+                id: first_peak
+
+            MonoLabel:
+                id: second_peak
+
+            MonoLabel:
+                id: third_peak
+
+        MDBoxLayout:
+            size_hint: 1, .55
+            orientation: 'vertical'
+            md_bg_color: root.manager.stale_gray
+            spacing: 25
+            padding: 20
+
+            MDBoxLayout:
+                size_hint: 1, .69
+                spacing: 25
+
+                MDBoxLayout:
+                    size_hint: .5, 1
+                    orientation: 'vertical'
+
+                    MDCard:
+                        padding: 10
+                        orientation: 'vertical'
+                        md_bg_color: root.manager.snow
+
+                        MDCard:
+                            size_hint: 1, .25
+                            md_bg_color: root.manager.stale_blue
+                            padding: 20, 8
+
+                            MonoLabel:
+                                size_hint: 1, 1
+                                text: 'STATUS'
+                                color: root.manager.snow
+                                halign: 'left'
+
+                        MDLabel:
+                            size_hint: 1, .75
+                            text: 'StandBy'
+                            font_size: 30
+                            halign: 'center'
+
+                MDBoxLayout:
+                    size_hint: .5, 1
+                    orientation: 'vertical'
+                    spacing: 25
+
+                    MDRectangleFlatIconButton:
+                        text: 'Start'
+                        icon: 'microphone-outline'
+                        size_hint: 1, .5
+
+                    MDRectangleFlatIconButton:
+                        text: 'E/G Modulus Calculation'
+                        icon: 'math-compass'
+                        size_hint: 1, .5
+
+            MDBoxLayout:
+                size_hint: 1, .31
+                spacing: 25
+
+                MDRectangleFlatIconButton:
+                    size_hint: .25, 1
+                    text: 'Archive'
+                    icon: 'archive-outline'
+
+                MDRectangleFlatIconButton:
+                    size_hint: .25, 1
+                    text: 'Serial Test'
+                    icon: 'format-list-bulleted'
+
+                MDRectangleFlatIconButton:
+                    size_hint: .25, 1
+                    text: 'Show FFT'
+                    icon: 'poll'
+
+                MDRectangleFlatIconButton:
+                    size_hint: .25, 1
+                    text: 'Show Wave'
+                    icon: 'waveform'
+
+        MDBoxLayout:
+            size_hint: 1, .15
+            md_bg_color: root.manager.stale_blue
+            padding: 15
+            spacing: 20
+
+            MDBoxLayout:
+                size_hint: .25, 1
+                orientation: 'vertical'
+
+                MonoLabel:
+                    id: date_label
+                    text: "0000-00-00"
+                    halign: 'center'
+
+                MonoLabel:
+                    id: time_label
+                    text: "00:00:00"
+                    halign: 'center'
+
+            MDBoxLayout:
+                size_hint: .5, 1
+                spacing: 20
+
+                MDRectangleFlatIconButton:
+                    size_hint: 1, 1
+                    text: 'Reset'
+                    icon: 'refresh'
+
+                MDRectangleFlatIconButton:
+                    size_hint: 1, 1
+                    text: 'Settings'
+                    icon: 'cog-outline'
+
+            MDBoxLayout:
+                size_hint: .25, 1
+
+                MonoLabel:
+                    text: 'SIET1010'
+                    halign: 'center'
+
