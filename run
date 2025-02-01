@@ -1,17 +1,27 @@
 #!/bin/bash
 
+# Function to restart the app
+restart_app() {
+    echo "Refreshing app..."
+    pkill -f "python -B main.py"  # Kill the existing app
+    python -B main.py &           # Restart the app
+}
+
 # Infinite loop to reload the app
 while true; do
-    # Run the Kivy app
-    python main.py
+    # Run the Kivy app initially
+    python -B main.py &
+    APP_PID=$!
 
-    # Check if the last command (python main.py) exited with a non-zero status
-    if [ $? -ne 0 ]; then
-        echo "Error detected, exiting loop."
-        break
-    fi
-
-    # Optional: add a small delay to avoid potential race conditions
-    sleep 1
+    # Wait for user input (CTRL+C to exit, CTRL+R to refresh)
+    while true; do
+        read -rsn1 input  # Read a single character without waiting for Enter
+        if [[ $input == $'\x03' ]]; then  # CTRL+C
+            echo "CTRL+C detected, exiting loop."
+            kill $APP_PID  # Kill the app if CTRL+C is pressed
+            break 2  # Break out of both loops
+        elif [[ $input == $'\x12' ]]; then  # CTRL+R
+            restart_app  # Refresh the app
+        fi
+    done
 done
-

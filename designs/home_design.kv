@@ -82,6 +82,9 @@
                     size_hint: .25, 1
                     text: 'Archive'
                     icon: 'archive-outline'
+                    on_release:
+                        root.manager.current = 'archive'
+                        root.manager.transition.direction = 'right'
 
                 MDRectangleFlatIconButton:
                     size_hint: .25, 1
