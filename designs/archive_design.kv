@@ -45,12 +45,12 @@
             MDBoxLayout:
                 size_hint: .2, 1
                 orientation: 'vertical'
-                padding: 10, 60
+                padding: 15, 20
                 spacing: 10
 
                 MDRectangleFlatIconButton:
                     id: new_folder_button
-                    size_hint: 1, .25
+                    size_hint: 1, .16
                     text: 'New Folder'
                     icon: 'folder-plus'
                     font_size: 21
@@ -58,7 +58,7 @@
 
                 MDRectangleFlatIconButton:
                     id: rename_button
-                    size_hint: 1, .25
+                    size_hint: 1, .16
                     text: 'Rename'
                     icon: 'pencil'
                     font_size: 21
@@ -66,7 +66,7 @@
 
                 MDRectangleFlatIconButton:
                     id: set_default_button
-                    size_hint: 1, .25
+                    size_hint: 1, .16
                     text: 'Set Default'
                     icon: 'star'
                     font_size: 21
@@ -74,11 +74,29 @@
 
                 MDRectangleFlatIconButton:
                     id: delete_button
-                    size_hint: 1, .25
+                    size_hint: 1, .16
                     text: 'Delete'
                     icon: 'delete'
                     font_size: 21
                     on_release: root.show_delete_dialog()
+
+                MDSeparator
+
+                MDRectangleFlatIconButton:
+                    id: select_all_button
+                    size_hint: 1, .16
+                    text: 'Select All'
+                    icon: 'select'
+                    font_size: 21
+                    on_release: root.table.table_data.select_all('down')
+
+                MDRectangleFlatIconButton:
+                    id: deselect_all_button
+                    size_hint: 1, .15
+                    text: 'Deselect All'
+                    icon: 'select-off'
+                    font_size: 21
+                    on_release: root.table.table_data.select_all('normal')
 
         MDBoxLayout:
             size_hint: 1, .15
@@ -87,7 +105,7 @@
             spacing: 20
 
             MDBoxLayout:
-                size_hint: .33, 1
+                size_hint: .25, 1
                 orientation: 'vertical'
 
                 MonoLabel:
@@ -101,19 +119,26 @@
                     halign: 'center'
 
             MDBoxLayout:
-                size_hint: .33, 1
+                size_hint: .5, 1
                 spacing: 20
 
                 MDRectangleFlatIconButton:
                     size_hint: 1, 1
-                    text: 'Back'
+                    text: 'Back to Home'
                     icon: 'arrow-right'
                     on_release:
                         root.manager.current = 'home'
                         root.manager.transition.direction = 'left'
 
+                MDRectangleFlatIconButton:
+                    id: copy_on_usb
+                    size_hint: 1, 1
+                    text: 'Copy to USB'
+                    icon: 'content-copy'
+                    on_release: root.show_copy_on_usb_dialog()
+
             MDBoxLayout:
-                size_hint: .33, 1
+                size_hint: .25, 1
 
                 MonoLabel:
                     text: 'SIET1010'

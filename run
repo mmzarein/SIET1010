@@ -4,13 +4,13 @@
 restart_app() {
     echo "Refreshing app..."
     pkill -f "python -B main.py"  # Kill the existing app
-    python -B main.py &           # Restart the app
+    source venv/bin/activate && python -B main.py &           # Restart the app
 }
 
 # Infinite loop to reload the app
 while true; do
     # Run the Kivy app initially
-    python -B main.py &
+    source venv/bin/activate && python -B main.py &
     APP_PID=$!
 
     # Wait for user input (CTRL+C to exit, CTRL+R to refresh)

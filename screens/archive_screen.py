@@ -3,14 +3,22 @@ import re
 import mimetypes
 import shutil
 import math
+import platform
+import psutil
+import time
+import threading
 from types import MethodType
 
 from kivy.metrics import dp
+from kivy.clock import Clock
 from kivy.core.window import Window
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.textfield import MDTextField
 from kivymd.uix.dialog import MDDialog
+from kivymd.uix.spinner import MDSpinner
 from kivymd.uix.button import MDFlatButton
+from kivymd.uix.progressbar import MDProgressBar
+from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.datatables import MDDataTable
 from kivymd.uix.datatables.datatables import (
     TableData,
@@ -28,13 +36,11 @@ def _get_checked_rows(self):
     checked_rows = []
     total_cols = self.total_col_headings
     for page in self.current_selection_check:
-        # Skip if the page no longer exists (e.g., after data change)
         if page >= len(self._row_data_parts):
             continue
         page_data = self._row_data_parts[page]
         for index in self.current_selection_check[page]:
             row_in_page = index // total_cols
-            # Ensure the row index is within the current page's data
             if row_in_page < len(page_data):
                 checked_rows.append(page_data[row_in_page])
     return checked_rows
@@ -65,6 +71,8 @@ class CustomDataTable(MDDataTable):
     def on_check_press(self, row):
         self.stop_propagation = True
         self.screen.update_buttons_state()
+        self.screen.update_copy_on_usb_button_state()
+        self.screen.update_select_deselect_buttons()
 
 
 class ArchiveScreen(MDScreen):
@@ -81,6 +89,9 @@ class ArchiveScreen(MDScreen):
             self.update_breadcrumbs()
         self.update_buttons_state()
         self.update_new_folder_button_state()
+        self.get_removable_drives()
+        self.update_copy_on_usb_button_state()
+        self.update_select_deselect_buttons()
 
     def setup_table(self):
         self.table = CustomDataTable(
@@ -113,6 +124,7 @@ class ArchiveScreen(MDScreen):
         )
         self.update_buttons_state()
         self.update_new_folder_button_state()
+        self.update_copy_on_usb_button_state()
 
     def back(self):
         norm_current = os.path.normpath(self.current_path)
@@ -153,9 +165,8 @@ class ArchiveScreen(MDScreen):
 
     def set_default(self, new_path):
         self.manager.default = new_path
-        self.set_default_dialog.dismiss()
         self.refresh()
-        self.update_buttons_state()
+        self.set_default_dialog.dismiss()
 
     def show_create_directory_dialog(self):
         self.create_directory_dialog = MDDialog(
@@ -184,10 +195,12 @@ class ArchiveScreen(MDScreen):
 
     def show_rename_dialog(self):
         selected_rows = self.table.get_row_checks()
-        if not selected_rows or len(selected_rows) != 1: return
+        if not selected_rows or len(selected_rows) != 1:
+            return
         old_name = selected_rows[0][0]
         old_path = os.path.join(self.current_path, old_name)
-        if old_path == self.manager.default: return
+        if old_path == self.manager.default:
+            return
         self.rename_dialog = MDDialog(
             title='Rename',
             type='custom',
@@ -219,7 +232,8 @@ class ArchiveScreen(MDScreen):
     def show_delete_dialog(self):
         # TODO: This function may need some improvments!
         selected_rows = self.table.get_row_checks()
-        if not selected_rows: return
+        if not selected_rows:
+            return
         self.files_to_delete = [
             os.path.join(self.current_path, row[0])
             for row in selected_rows
@@ -254,10 +268,14 @@ class ArchiveScreen(MDScreen):
 
     def show_set_default_dialog(self):
         selected_rows = self.table.get_row_checks()
-        if not selected_rows or len(selected_rows) != 1: return
-        default_candidate = os.path.join(self.current_path, selected_rows[0][0])
-        if default_candidate == self.manager.default: return
-        if os.path.isfile(default_candidate): return
+        if not selected_rows or len(selected_rows) != 1:
+            return
+        default_candidate = os.path.join(
+            self.current_path, selected_rows[0][0])
+        if default_candidate == self.manager.default:
+            return
+        if os.path.isfile(default_candidate):
+            return
         self.set_default_dialog = MDDialog(
             title='Set as Default Folder?',
             text=default_candidate,
@@ -301,14 +319,18 @@ class ArchiveScreen(MDScreen):
                     ))
             return self.contents
         # TODO: Notify the user about `PermissionError` and `FileNotFoundErrors`.
-        except FileNotFoundError: return []
-        except PermissionError: return []
+        except FileNotFoundError:
+            return []
+        except PermissionError:
+            return []
 
     def can_create_new_folder(self):
         try:
-            count = sum(1 for entry in os.scandir(self.current_path) if entry.is_dir())
+            count = sum(1 for entry in os.scandir(
+                self.current_path) if entry.is_dir())
             return count < 5
-        except (PermissionError, FileNotFoundError): return False
+        except (PermissionError, FileNotFoundError):
+            return False
 
     def update_new_folder_button_state(self):
         self.ids.new_folder_button.disabled = not self.can_create_new_folder()
@@ -317,23 +339,24 @@ class ArchiveScreen(MDScreen):
         selected = self.table.get_row_checks()
         num_selected = len(selected)
 
-        # Rename button: Enable if exactly one row selected and not Default Folder!
+
         if num_selected == 1:
             selected_path = os.path.join(self.current_path, selected[0][0])
             if selected_path != self.manager.default:
                 self.ids.rename_button.disabled = False
+            else:
+                self.ids.rename_button.disabled = True
         else:
             self.ids.rename_button.disabled = True
 
-        # Delete button: Enable if any selected, but not the Default Folder
         delete_disabled = True
         if num_selected > 0:
             default_path = self.manager.default
-            has_default = any(os.path.join(self.current_path, row[0]) == default_path for row in selected)
+            has_default = any(os.path.join(self.current_path,
+                              row[0]) == default_path for row in selected)
             delete_disabled = has_default
         self.ids.delete_button.disabled = delete_disabled
 
-        # Set Default button: Enable if one folder selected, not the current default
         set_default_disabled = True
         if num_selected == 1:
             name = selected[0][0]
@@ -347,17 +370,203 @@ class ArchiveScreen(MDScreen):
         total_size = 0
         for entry in os.scandir(directory):
             if entry.is_dir():
-                total_size += get_directory_size(entry.path)
+                total_size += ArchiveScreen.get_directory_size(entry.path)
             else:
                 total_size += entry.stat().st_size
         return total_size
 
     @staticmethod
     def human_readable_size(size_in_bytes):
-        if size_in_bytes == 0: return '0 B'
+        if size_in_bytes == 0:
+            return '0 B'
         units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
         power = int(math.log(size_in_bytes, 1024))
         power = min(power, len(units) - 1)
         size = size_in_bytes / (1024 ** power)
         return f'{size:.2f} {units[power]}'
+
+    def get_removable_drives(self):
+        removable_drives = []
+        system = platform.system()
+        partitions = psutil.disk_partitions()
+        for p in partitions:
+            if (system == 'Linux' and ('media' in p.mountpoint or 'removable' in p.opts)):
+                usage = psutil.disk_usage(p.mountpoint)
+                removable_drives.append({
+                    'name': os.path.basename(os.path.normpath(p.mountpoint)),
+                    'mountpoint': p.mountpoint,
+                    'device': p.device,
+                    'fstype': p.fstype,
+                    'total_size': usage.total,
+                    'used': usage.used,
+                    'free': usage.free
+                })
+        return removable_drives
+
+    def update_copy_on_usb_button_state(self):
+        self.get_removable_drives()
+        self.ids.copy_on_usb.disabled = False if self.table.get_row_checks() else True
+
+    def update_select_deselect_buttons(self):
+        row_checks = self.table.get_row_checks()
+        total_rows = len(self.table.row_data)
+        self.ids.select_all_button.disabled = len(row_checks) == total_rows
+        self.ids.deselect_all_button.disabled = not row_checks
+
+    def show_copy_on_usb_dialog(self):
+        if not self.table.get_row_checks():
+            return
+        removable_drives = self.get_removable_drives()
+        if removable_drives:
+            if len(removable_drives) == 1:
+                self.files_to_copy = [
+                    os.path.join(self.current_path, row[0])
+                    for row in self.table.get_row_checks()
+                ]
+                if len(self.files_to_copy) > 20:
+                    message = 'More than 20 files is going to copied!'
+                else:
+                    message = '\n'.join(self.files_to_copy)
+                self.copy_on_usb_dialog = MDDialog(
+                    title=f'Copy on {removable_drives[0]["name"]}?',
+                    text=message,
+                    buttons=[
+                        MDFlatButton(
+                            text='CANCEL',
+                            # Only available KivyMD 1.2.0!
+                            text_color=self.theme_cls.error_color,
+                            theme_text_color='Custom',
+                            on_release=lambda _: self.copy_on_usb_dialog.dismiss()
+                        ),
+                        MDFlatButton(
+                            text='OK',
+                            # Only available in KivyMD 1.2.0!
+                            text_color=self.theme_cls.primary_color,
+                            theme_text_color='Custom',
+                            on_release=lambda _: self.copy_items(
+                                self.files_to_copy,
+                                removable_drives[0]['mountpoint']
+                            )
+                        )
+                    ]
+                )
+                self.copy_on_usb_dialog.open()
+            else:
+                pass
+
+        else:
+            self.copy_on_usb_dialog = MDDialog(
+                title='USB Not Detected!',
+                buttons=[MDFlatButton(
+                    text='OK',
+                    # Only available KivyMD 1.2.0!
+                    text_color=self.theme_cls.primary_color,
+                    theme_text_color='Custom',
+                    on_release=lambda _: self.copy_on_usb_dialog.dismiss()
+                )]
+            )
+            self.copy_on_usb_dialog.open()
+
+    def show_error_dialog(self, message):
+        error_dialog = MDDialog(
+            title='Error',
+            text=message,
+            buttons=[
+                MDFlatButton(
+                    text='OK',
+                    on_release=lambda _: error_dialog.dismiss()
+                )
+            ]
+        )
+        error_dialog.open()
+
+    @staticmethod
+    def count_files_recursive(path):
+        if os.path.isfile(path):
+            return 1
+        total_files = 0
+        for entry in os.scandir(path):
+            if entry.is_file():
+                total_files += 1
+            elif entry.is_dir():
+                total_files += ArchiveScreen.count_files_recursive(entry.path)
+        return total_files
+
+    def copy_items(self, src_list, dst_path):
+        total_files = 0
+        for src in src_list:
+            total_files += ArchiveScreen.count_files_recursive(src)
+
+        self.progress_dialog = MDDialog(
+            title='Copying Files...',
+            type='custom',
+            auto_dismiss=False,
+            buttons=[
+                MDFlatButton(
+                    text='CANCEL',
+                    theme_text_color='Custom',
+                    text_color=self.theme_cls.error_color,
+                    on_release=lambda _: self.cancel_copy()
+                )
+            ]
+        )
+        self.progress_bar = MDProgressBar()
+        self.progress_box = MDBoxLayout(padding=15, size_hint=(1, .3))
+        self.progress_box.add_widget(self.progress_bar)
+        self.progress_dialog.add_widget(self.progress_box)
+        self.progress_dialog.open()
+
+        self.cancel_flag = False
+        self.copied_files = 0
+
+        def copy_recursive(src, dst):
+            if self.cancel_flag:
+                return
+
+            if os.path.isdir(src):
+                os.makedirs(dst, exist_ok=True)
+                for entry in os.scandir(src):
+                    new_src = entry.path
+                    new_dst = os.path.join(dst, entry.name)
+                    copy_recursive(new_src, new_dst)
+            else:
+                shutil.copy2(src, dst)
+                self.copied_files += 1
+                progress = (self.copied_files / total_files) * 100
+                Clock.schedule_once(lambda dt: self.update_progress(progress))
+
+        def copy_in_thread(src_list, dst_path):
+            try:
+                for src in src_list:
+                    if self.cancel_flag:
+                        break
+
+                    dest = os.path.join(dst_path, os.path.basename(src))
+                    if os.path.exists(dest):
+                        raise Exception(
+                            f'Destination already exists: {os.path.basename(dest)}')
+                    copy_recursive(src, dest)
+
+                Clock.schedule_once(lambda dt: self.progress_dialog.dismiss())
+                Clock.schedule_once(lambda dt: self.refresh())
+            except Exception as e:
+                error_message = str(e)
+                Clock.schedule_once(
+                    lambda dt, msg=error_message: self.show_error_dialog(msg))
+            finally:
+                Clock.schedule_once(lambda dt: self.progress_dialog.dismiss())
+
+        threading.Thread(
+            target=copy_in_thread,
+            args=(src_list, dst_path),
+            daemon=True
+        ).start()
+        self.copy_on_usb_dialog.dismiss()
+
+    def update_progress(self, progress):
+        self.progress_bar.value = progress
+
+    def cancel_copy(self):
+        self.cancel_flag = True
+        self.progress_dialog.dismiss()
 
