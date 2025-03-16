@@ -154,10 +154,12 @@ class Calculator:
         b = float(kwargs['width'])
         t = float(kwargs['thickness'])
         m = float(kwargs['mass'])
-        Ff = float(kwargs.get('flexural_frequency', 0)) * 1000
-        Ft = float(kwargs.get('torsional_frequency', 0)) * 1000
-        P = float(kwargs['initial_poisson_ratio'])
         measurement = kwargs['measurement_type']
+        if measurement == 'flexural':
+            Ff = float(kwargs.get('flexural_frequency', 0)) * 1000
+        if measurement == 'torsional':
+            Ft = float(kwargs.get('torsional_frequency', 0)) * 1000
+        P = float(kwargs['initial_poisson_ratio'])
 
         if measurement == 'flexural':
             T1 = Calculator._calc_T1(L, t, P)
@@ -222,10 +224,12 @@ class Calculator:
         L = float(args['length'])
         D = float(args['diameter'])
         m = float(args['mass'])
-        Ff = float(args.get('flexural_frequency', 0)) * 1000
-        Ft = float(args.get('torsional_frequency', 0)) * 1000
-        P = float(args['initial_poisson_ratio'])
         measurement = args['measurement_type']
+        if measurement == 'flexural':
+            Ff = float(args.get('flexural_frequency', 0)) * 1000
+        if measurement == 'torsional':
+            Ft = float(args.get('torsional_frequency', 0)) * 1000
+        P = float(args['initial_poisson_ratio'])
 
         if measurement == 'flexural':
             T1r = Calculator._calc_T1r(L, D, P)
