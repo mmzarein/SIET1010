@@ -244,5 +244,7 @@ class Main(MDApp):
 
 
 if __name__ == '__main__':
+    Window.borderless = True
+    Window.size = 1024, 600
     Main().run()
 

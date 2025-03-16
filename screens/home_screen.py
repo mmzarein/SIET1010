@@ -1,3 +1,7 @@
+import subprocess
+from kivymd.app import MDApp
+from kivymd.uix.dialog import MDDialog
+from kivymd.uix.button import MDFlatButton
 from kivymd.uix.screen import MDScreen
 
 
@@ -94,5 +98,30 @@ class HomeScreen(MDScreen):
         self.manager.transition.direction = 'up'
 
     def reboot(self):
-        pass
+        self.reboot_dialog = MDDialog(
+            title='Are you sure you want to reboot?',
+            text='Warning: Unsaved work will be lost and cannot be recovered!',
+            buttons = [
+                MDFlatButton(
+                    text='Cancel',
+                    theme_text_color='Custom',
+                    md_bg_color=MDApp.get_running_app().BOLD_RED,
+                    on_release=lambda _: self.reboot_dialog.dismiss()
+                ),
+                MDFlatButton(
+                    text='OK',
+                    theme_text_color='Custom',
+                    md_bg_color=MDApp.get_running_app().SKY_MIST,
+                    on_release=lambda _: self.sudo_reboot()
+                )
+            ]
+        )
+        self.reboot_dialog.open()
+
+    def sudo_reboot(self):
+        try:
+            self.reboot_dialog.dismiss()
+            subprocess.run(["sudo", "reboot"], check=True)
+        except subprocess.CalledProcessError as e:
+            print(f"Error: {e}")
 
