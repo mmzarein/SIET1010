@@ -28,8 +28,8 @@ class HomeScreen(MDScreen):
             self.ids.third_peak
         ]
         labels = [
-            'Mohammad Peak:',
-            'Vahid Peak:',
+            'First Peak:',
+            'Second Peak:',
             'Third Peak:'
         ]
 
