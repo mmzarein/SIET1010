@@ -146,7 +146,7 @@ class AdvancedSettingsScreen(MDScreen):
 
     def update(self):
         # Define your repository details
-        CLONE_DIR = "/home/mahdi/Workspace/SIET1010/"
+        CLONE_DIR = "/home/pipi/SIET1010/"
 
         updater = Updater(CLONE_DIR)
 
