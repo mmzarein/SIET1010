@@ -1,5 +1,45 @@
+import os
+import shutil
+import subprocess
+import threading
+import git
+from kivy.app import App
+from kivy.clock import mainthread
 from kivymd.uix.screen import MDScreen
 
+class Updater:
+    def __init__(self, repo_url, branch, username, token, clone_dir):
+        self.repo_url = repo_url.replace("https://", f"https://{username}:{token}@")
+        self.branch = branch
+        self.clone_dir = clone_dir
+
+    def update(self):
+        threading.Thread(target=self._perform_update, daemon=True).start()
+
+    def _perform_update(self):
+        try:
+            self._clone_or_pull_repo()
+            self._install_dependencies()
+        except Exception as e:
+            print(f"Update failed: {e}")
+
+    def _clone_or_pull_repo(self):
+        if os.path.exists(self.clone_dir):
+            print("Repository exists, pulling latest changes...")
+            repo = git.Repo(self.clone_dir)
+            repo.git.checkout(self.branch)
+            repo.remotes.origin.pull()
+        else:
+            print("Cloning repository...")
+            git.Repo.clone_from(self.repo_url, self.clone_dir, branch=self.branch)
+
+    def _install_dependencies(self):
+        requirements_path = os.path.join(self.clone_dir, "requirements.txt")
+        if os.path.exists(requirements_path):
+            print("Installing dependencies...")
+            subprocess.run(["pip", "install", "-r", requirements_path], check=True)
+        else:
+            print("No requirements.txt found, skipping dependency installation.")
 
 class GeneralSettingsScreen(MDScreen):
     def __init__(self, **kwargs):
@@ -96,3 +136,16 @@ class AdvancedSettingsScreen(MDScreen):
             self.ids.resolution_label.text = f'Resolution: {value:.1f}'
         else:
             self.ids.sensitivity_label.text = f'Sensitivity: {value:.1f}'
+
+    def update(self):
+        # Define your repository details
+        REPO_URL = "https://github.com/mmzarein/SIET1010.git"
+        BRANCH = "refactor"
+        USERNAME = "mmzarein"
+        TOKEN = os.getenv('GITHUB_TOKEN')
+        CLONE_DIR = "/home/pipi/SIET1010/"
+
+        updater = Updater(REPO_URL, BRANCH, USERNAME, TOKEN, CLONE_DIR)
+
+        updater.update()
+
