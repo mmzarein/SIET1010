@@ -29,7 +29,7 @@ class HomeScreen(MDScreen):
         ]
         labels = [
             'Mohammad Peak:',
-            'Second Peak:',
+            'Vahid Peak:',
             'Third Peak:'
         ]
 
