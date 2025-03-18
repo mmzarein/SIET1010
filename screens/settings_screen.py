@@ -2,19 +2,23 @@ import os
 import shutil
 import subprocess
 import threading
-import git
-from kivy.app import App
 from kivy.clock import mainthread
 from kivymd.uix.screen import MDScreen
+from kivymd.uix.dialog import MDDialog
+
 
 class Updater:
-    def __init__(self, repo_url, branch, username, token, clone_dir):
-        self.repo_url = repo_url.replace("https://", f"https://{username}:{token}@")
-        self.branch = branch
+    def __init__(self, clone_dir):
         self.clone_dir = clone_dir
+
+        self.update_dialog = MDDialog(
+            title='Update',
+            text='The app is updating itself in the most inefficient and insecure way possible. Do not close the app, for God\'s sake!'
+        )
 
     def update(self):
         threading.Thread(target=self._perform_update, daemon=True).start()
+        self.update_dialog.open()
 
     def _perform_update(self):
         try:
@@ -24,22 +28,25 @@ class Updater:
             print(f"Update failed: {e}")
 
     def _clone_or_pull_repo(self):
-        if os.path.exists(self.clone_dir):
-            print("Repository exists, pulling latest changes...")
-            repo = git.Repo(self.clone_dir)
-            repo.git.checkout(self.branch)
-            repo.remotes.origin.pull()
-        else:
-            print("Cloning repository...")
-            git.Repo.clone_from(self.repo_url, self.clone_dir, branch=self.branch)
+        os.system('rm -rf ./update')
+        self.update_dialog.text = 'Cloning from GitHub!'
+        os.system('git clone https://github.com/mmzarein/SIET1010.git ./update')
+        os.system('cd ./update/ && git checkout refactor && cd ..')
+        self.update_dialog.text = 'Installing the update!'
+        os.system(f'rsync -av --remove-source-files ./update/* {self.clone_dir}')
+        self.update_dialog.text = 'Clean Up!'
+        os.system('rm -rf ./update')
 
     def _install_dependencies(self):
         requirements_path = os.path.join(self.clone_dir, "requirements.txt")
         if os.path.exists(requirements_path):
             print("Installing dependencies...")
+            self.update_dialog.text = 'Installing the Dependencies!'
             subprocess.run(["pip", "install", "-r", requirements_path], check=True)
         else:
             print("No requirements.txt found, skipping dependency installation.")
+
+        self.update_dialog.text = 'Done!'
 
 class GeneralSettingsScreen(MDScreen):
     def __init__(self, **kwargs):
@@ -139,13 +146,9 @@ class AdvancedSettingsScreen(MDScreen):
 
     def update(self):
         # Define your repository details
-        REPO_URL = "https://github.com/mmzarein/SIET1010.git"
-        BRANCH = "refactor"
-        USERNAME = "mmzarein"
-        TOKEN = os.getenv('GITHUB_TOKEN')
-        CLONE_DIR = "/home/pipi/SIET1010/"
+        CLONE_DIR = "/home/mahdi/Workspace/SIET1010/"
 
-        updater = Updater(REPO_URL, BRANCH, USERNAME, TOKEN, CLONE_DIR)
+        updater = Updater(CLONE_DIR)
 
         updater.update()
 
