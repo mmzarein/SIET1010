@@ -200,8 +200,6 @@ class Navigator(MDScreenManager):
         self.config_manager = ConfigManager()
         self.calculator = Calculator()
 
-        self.current = 'general_settings' # TMP!
-
         self.default = self.config_manager.get(
             'SIET1010', 'archive_path', fallback='Archive/SIET1010'
         )
