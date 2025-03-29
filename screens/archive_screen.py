@@ -543,7 +543,7 @@ class ArchiveScreen(MDScreen):
                         break
 
                     dest = os.path.join(dst_path, os.path.basename(src))
-                    if os.path.exists(dest):
+                    if os.path.exists(dest) and False:
                         raise Exception(
                             f'Destination already exists: {os.path.basename(dest)}')
                     copy_recursive(src, dest)
@@ -556,12 +556,14 @@ class ArchiveScreen(MDScreen):
                     lambda dt, msg=error_message: self.show_error_dialog(msg))
             finally:
                 Clock.schedule_once(lambda dt: self.progress_dialog.dismiss())
+                self.progress_dialog.dismiss()
 
         threading.Thread(
             target=copy_in_thread,
             args=(src_list, dst_path),
             daemon=True
         ).start()
+        self.progress_dialog.dismiss()
         self.copy_on_usb_dialog.dismiss()
 
     def update_progress(self, progress):

@@ -45,7 +45,6 @@ class FFTScreen(MDScreen):
         self.save_dialog.open()
 
     def save(self, name):
-        print(self.manager.app.signal_processor.fft_result)
         np.savetxt(
             os.path.join(self.manager.default, name),
             self.manager.app.signal_processor.fft_result,

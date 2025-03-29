@@ -46,8 +46,6 @@ class HomeScreen(MDScreen):
                 'Start',
                 'microphone-outline',
                 self.manager.app.PURE_LIGHT,
-                'StandBy',
-                self.manager.app.PURE_LIGHT
             )
 
             if success:
@@ -65,8 +63,6 @@ class HomeScreen(MDScreen):
                 'Stop',
                 'stop-circle-outline',
                 self.manager.app.BOLD_RED,
-                'Measuring...',
-                self.manager.app.VIBRANT_GREEN
             )
 
             self.archive_btn.disabled = True
@@ -84,14 +80,10 @@ class HomeScreen(MDScreen):
         btn_text,
         icon,
         btn_color,
-        card_text,
-        card_color
     ):
         self.start_stop_btn.text = btn_text
         self.start_stop_btn.icon = icon
         self.start_stop_btn.md_bg_color = btn_color
-        self.state_label.text = card_text
-        self.state_card.md_bg_color = card_color
 
     def open_settings(self):
         self.manager.current = 'general_settings'

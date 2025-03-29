@@ -16,8 +16,13 @@ from kivymd.uix.textfield import MDTextField
 from kivymd.uix.button import MDFlatButton, MDRectangleFlatIconButton
 from kivymd.uix.behaviors.toggle_behavior import MDToggleButton
 from kivymd.uix.dialog import MDDialog
+from kivy.input.providers.mtdev import MTDMotionEvent
+from kivy.input.providers.mouse import MouseMotionEvent
 
 from core import SignalProcessor, Calculator
+
+
+class PrimaryButton(MDRectangleFlatIconButton): pass
 
 
 class ChoiceButton(MDRectangleFlatIconButton, MDToggleButton): pass
@@ -104,16 +109,17 @@ class LabelField(MDTextField):
         super().__init__(**kwargs)
 
     def on_touch_down(self, touch):
-        if self.collide_point(*touch.pos):
-            if self.is_output: return
-            self.prompt = Prompt(
-                title=self.dialog_title,
-                ok_action=self.ok,
-                pending_value=self.text,
-                upper_limit=self.upper_limit,
-                lower_limit=self.lower_limit
-            )
-            self.prompt.open()
+        if not self.collide_point(*touch.pos): return
+        if isinstance(touch, MouseMotionEvent): return
+        if self.is_output: return
+        self.prompt = Prompt(
+            title=self.dialog_title,
+            ok_action=self.ok,
+            pending_value=self.text,
+            upper_limit=self.upper_limit,
+            lower_limit=self.lower_limit
+        )
+        self.prompt.open()
 
     def ok(self, value):
         self.text = value
@@ -198,6 +204,11 @@ class Navigator(MDScreenManager):
             'SIET1010', 'archive_path', fallback='Archive/SIET1010'
         )
 
+    def on_touch_down(self, touch):
+        if self.collide_point(*touch.pos):
+            if not isinstance(touch, MouseMotionEvent):
+                super().on_touch_down(touch)
+
     def back(self, direction):
         self.current = 'home'
         self.transition.direction = direction
@@ -211,6 +222,7 @@ class Main(MDApp):
     VIBRANT_GREEN = ColorProperty((0.28, 0.73, 0.31, .5))
     BOLD_RED = ColorProperty((0.73, 0.23, 0.23, .5))
     SKY_MIST = ColorProperty((0.55, 0.6, 0.7, 1))
+
 
     def on_start(self):
         Window.borderless = True
@@ -236,15 +248,16 @@ class Main(MDApp):
         home_screen.start_stop(success)
 
     def build(self):
+        manager = Navigator(self)
         VKeyboard.layout_path = 'keyboards'
         VKeyboard.layout = 'minimal'
-        self.signal_processor = SignalProcessor()
+        self.signal_processor = SignalProcessor(manager)
         self._stop_recording = threading.Event()
-        return Navigator(self)
+        return manager
 
 
 if __name__ == '__main__':
-    # Window.borderless = True
+    Window.borderless = True
     Window.size = 900, 500
     Main().run()
 

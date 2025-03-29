@@ -24,7 +24,7 @@
                 size_hint: .8, 1
 
                 MDBoxLayout:
-                    size_hint: 1, .25
+                    size_hint: 1, .3
 
                     MDBoxLayout:
                         size_hint: .5, 1
@@ -45,24 +45,33 @@
                         MDBoxLayout:
                             size_hint: 1, .7
                             LabelField:
-                                pos_hint: {'center_y': .44}
+                                dialog_title: 'Hour:'
                                 hint_text: 'Hour'
+                                pos_hint: {'center_y': .44}
+                                lower_limit: 1
+                                upper_limit: 23
                             MonoLabel:
                                 text: ':'
                                 size_hint: .2, 1
                                 font_size: 40
                                 color: app.VOID_BLACK
                             LabelField:
+                                dialog_title: 'Minute:'
                                 hint_text: 'Minute'
                                 pos_hint: {'center_y': .44}
+                                lower_limit: 0
+                                upper_limit: 59
                             MonoLabel:
                                 text: ':'
                                 size_hint: .2, 1
                                 font_size: 40
                                 color: app.VOID_BLACK
                             LabelField:
+                                dialog_title: 'Second:'
                                 hint_text: 'Second'
                                 pos_hint: {'center_y': .44}
+                                lower_limit: 0
+                                upper_limit: 59
 
                     MDSeparator:
                         orientation: 'vertical'
@@ -84,35 +93,44 @@
                         MDBoxLayout:
                             size_hint: 1, .7
                             LabelField:
+                                dialog_title: 'Year:'
                                 hint_text: 'Year'
                                 pos_hint: {'center_y': .44}
+                                lower_limit: 2000
+                                upper_limit: 3000
                             MonoLabel:
                                 text: '/'
                                 size_hint: .2, 1
                                 font_size: 40
                                 color: app.VOID_BLACK
                             LabelField:
+                                dialog_title: 'Month:'
                                 hint_text: 'Month'
                                 pos_hint: {'center_y': .44}
+                                lower_limit: 1
+                                upper_limit: 12
                             MonoLabel:
                                 text: '/'
                                 size_hint: .2, 1
                                 font_size: 40
                                 color: app.VOID_BLACK
                             LabelField:
+                                dialog_title: 'Day:'
                                 hint_text: 'Day'
                                 pos_hint: {'center_y': .44}
+                                lower_limit: 1
+                                upper_limit: 31
 
                 MDSeparator
 
                 MDBoxLayout:
-                    size_hint: 1, .5
+                    size_hint: 1, .7
                     orientation: 'vertical'
                     padding: 15
                     spacing: 50
 
                     MDBoxLayout:
-                        size_hint: 1, .3
+                        size_hint: 1, .2
 
                         MDLabel:
                             text: 'Filter Selection:'
@@ -128,7 +146,7 @@
 
                     MDBoxLayout:
                         id: frequencies_label
-                        size_hint: .488, .7
+                        size_hint: .488, .8
                         orientation: 'vertical'
                         pos_hint: {'center_x': .5}
 
@@ -159,27 +177,6 @@
                                 MDLabel:
                                     size_hint: .2, 1
                                     text: 'kHz'
-
-                MDSeparator
-
-                MDBoxLayout:
-                    size_hint: 1, .25
-                    padding: 15
-
-                    MDLabel:
-                        size_hint: .2, 1
-                        text: 'Brightness:'
-                        font_style: 'H5'
-                        underline: True
-
-                    MDSlider:
-                        size_hint: .8, 1
-                        value: 70
-                        color: app.STALE_BLUE
-                        thumb_color_active: app.STALE_BLUE
-                        thumb_color_inactive: app.STALE_BLUE
-                        hint_bg_color: app.VOID_BLACK
-                        hint_text_color: app.PURE_LIGHT
 
             MDSeparator:
                 orientation: 'vertical'
@@ -279,21 +276,24 @@
 
                         MDSlider:
                             id: sensitivity_slider
-                            value: 20
+                            value: 2e6
                             size_hint: 1, .2
                             hint: False
                             on_value: root.update_label('sensitivity', self.value)
+                            min: 1e6
+                            max: 5e6
+                            step: 1e5
 
                         MDBoxLayout:
                             size_hint: 1, .2
                             padding: 10, 0
                             MonoLabel:
-                                text: 'Min'
+                                text: 'Min: 1e6'
                                 color: app.VOID_BLACK
                                 halign: 'left'
 
                             MonoLabel:
-                                text: 'Max'
+                                text: 'Max: 5e6'
                                 color: app.VOID_BLACK
                                 halign: 'right'
 

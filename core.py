@@ -1,16 +1,24 @@
 import time
+import pyaudio
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import find_peaks
 from kivy.clock import Clock
 
+# Configuration Constants
+CHUNK_SIZE = 1024         # Samples per buffer chunk
+RECORD_DURATION = 1       # Duration to record after trigger (seconds)
+THRESHOLD = 2e6           # Amplitude threshold for triggering
+PLOT_SAMPLES = 5000       # Number of samples to show in plot for clarity
 
 class SignalProcessor:
-    def __init__(self, sample_rate: int = 96000, n_samples: int = 2**17) -> None:
+    def __init__(self, manager, sample_rate: int = 196000, n_samples: int = 2**17) -> None:
+        self.manager = manager
         self.sample_rate = sample_rate
         self.n_samples = n_samples
         self.t = np.arange(self.n_samples) / self.sample_rate
         self.frequencies = self.sample_rate * np.arange(self.n_samples // 2 + 1) / self.n_samples
+        self.home_screen = self.manager.get_screen('home')
 
     def compute_fft(self, signal: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         '''Compute the Fast Fourier Transform (FFT) of the signal.'''
@@ -21,15 +29,26 @@ class SignalProcessor:
         self.single_side_magnitude[1:-1] *= 2
         return self.fft_result, self.single_side_magnitude
 
-    def find_peaks(self, distance: int = 1000) -> np.ndarray:
+    def calculate_fft(self, post_data):
+        self.home_screen.ids.state_label.text = 'Calculating'
+        fft_data = np.fft.fft(post_data)
+        self.fft_result = fft_data
+        fft_freqs = np.fft.fftfreq(len(fft_data), 1/self.sample_rate)
+        return fft_data, fft_freqs
+
+    def get_peaks(self) -> np.ndarray:
         '''Find the peaks in the single-sided magnitude spectrum.'''
-        self.peaks, _ = find_peaks(self.single_side_magnitude, distance=distance)
+        self.fft_magnitude = np.abs(self.fft_data)[:len(self.fft_data)//2]
+        self.fft_frequencies = self.fft_freqs[:len(self.fft_data)//2]
+        peaks, _ = find_peaks(self.fft_magnitude)
+        sorted_indices = np.argsort(self.fft_magnitude[peaks])[::-1]
+        self.peaks = peaks[sorted_indices[:3]]
         return self.peaks
 
     def plot_wave(self) -> plt.Figure:
         '''Plot the time-domain representation of the signal.'''
         wave_fig, wave_ax = plt.subplots(layout='constrained')
-        wave_ax.plot(self.t[:200], self.signal[:200])
+        wave_ax.plot(self.signal)
         wave_ax.grid()
         wave_ax.set_xlabel('Time (ms)', fontsize=13, labelpad=10)
         wave_ax.set_ylabel('Amplitude (v)', fontsize=13, labelpad=10)
@@ -38,8 +57,12 @@ class SignalProcessor:
     def plot_fft(self) -> plt.Figure:
         '''Plot the frequency-domain representation (FFT) and mark the detected peaks.'''
         fft_fig, fft_ax = plt.subplots(layout='constrained')
-        fft_ax.plot(self.frequencies, self.single_side_magnitude)
-        fft_ax.plot(self.frequencies[self.peaks], self.single_side_magnitude[self.peaks], 's')
+        fft_ax.plot(self.fft_freqs[:len(self.fft_data)//2], np.abs(self.fft_data)[:len(self.fft_data)//2])
+        fft_ax.scatter(
+            self.fft_frequencies[self.peaks],
+            self.fft_magnitude[self.peaks],
+            facecolors='none', edgecolors='red', marker='s', s=100,
+        )
         fft_ax.grid()
         fft_ax.set_xlabel('Frequency (kHz)', fontsize=13, labelpad=10)
         fft_ax.set_ylabel('Amplitude (v)', fontsize=13, labelpad=10)
@@ -53,7 +76,103 @@ class SignalProcessor:
             0.25 * np.sin(2 * np.pi * 25000 * self.t)
         )
 
-    def run(self, stop_event, callback):
+    def initialize_audio_stream(self):
+        audio = pyaudio.PyAudio()
+        try:
+            stream = audio.open(
+                format=pyaudio.paInt32,
+                rate=self.sample_rate,
+                channels=1,
+                input=True,
+                frames_per_buffer=CHUNK_SIZE
+            )
+            return audio, stream
+        except Exception as e:
+            audio.terminate()
+            raise RuntimeError(f"Failed to initialize audio stream: {str(e)}")
+
+    def capture_trigger_data(self, stream):
+        """Capture audio data until threshold is exceeded."""
+        pre_trigger_data = []
+        print("Listening for trigger...")
+        self.home_screen.ids.state_label.text = 'Listening'
+
+        while True:
+            raw_data = stream.read(CHUNK_SIZE, exception_on_overflow=False)
+            chunk = np.frombuffer(raw_data, dtype=np.int32)
+            trigger_pos = np.where(np.abs(chunk) > self.threshold)[0]
+
+            if trigger_pos.size > 0:
+                print("Trigger detected! Starting recording...")
+                self.home_screen.ids.state_label.text = 'Storing'
+                # Split the chunk at first trigger
+                pre_trigger_data.append(chunk[:trigger_pos[0]])
+                post_trigger_remainder = chunk[trigger_pos[0]:]
+                return np.concatenate(pre_trigger_data), post_trigger_remainder
+
+            pre_trigger_data.append(chunk)
+
+    def record_after_trigger(self, stream):
+        """Record audio for specified duration after trigger."""
+        frames = []
+        # total_samples = self.sample_rate * RECORD_DURATION
+
+        total_samples = int(self.sample_rate / float(self.resolution))
+
+        for _ in range(0, total_samples, CHUNK_SIZE):
+            frames.append(stream.read(CHUNK_SIZE, exception_on_overflow=False))
+
+        return np.frombuffer(b''.join(frames), dtype=np.int32)
+
+    def run(self, stop, callback):
+
+        self.resolution = self.manager.config_manager.get(
+            'SIET1010',
+            'resolution'
+        )
+
+        self.threshold = float(self.manager.config_manager.get(
+            'SIET1010',
+            'sensitivity'
+        ))
+
+        audio, stream = None, None
+
+        # Initialize audio system
+        audio, stream = self.initialize_audio_stream()
+
+        if stop.is_set():
+            print('Stop detected! Exiting...')
+            return False
+
+        # Capture data until trigger
+        pre_trigger = self.capture_trigger_data(stream)
+
+        if stop.is_set():
+            print('Stop detected! Exiting...')
+            return False
+
+        # Capture post-trigger recording
+        post_trigger = self.record_after_trigger(stream)
+        self.signal = post_trigger
+
+        if stop.is_set():
+            print('Stop detected! Exiting...')
+            return False
+
+        # Calculating FFT
+        self.fft_data, self.fft_freqs = self.calculate_fft(post_trigger)
+
+        peaks = self.get_peaks()
+
+        peaks = self.fft_frequencies[peaks]
+
+        Clock.schedule_once(lambda dt: callback(True, post_trigger, peaks))
+        self.home_screen.ids.state_label.text = 'StandBy'
+        return True
+
+
+    def draft_run(self, stop_event, callback):
         print('Starting signal processing...')
 
         # Step 1: Generate the signal
@@ -80,7 +199,7 @@ class SignalProcessor:
         # Step 3: Find peaks
         print('Finding peaks...')
         time.sleep(1)  # Simulate a 2-second task
-        peaks = self.find_peaks()
+        peaks = fft_result[self.find_peaks()]
         if stop_event.is_set():
             print('Stop event detected after finding peaks. Exiting...')
             return False
@@ -155,11 +274,16 @@ class Calculator:
         t = float(kwargs['thickness'])
         m = float(kwargs['mass'])
         measurement = kwargs['measurement_type']
+        Ff = Ft = 1
         if measurement == 'flexural':
             Ff = float(kwargs.get('flexural_frequency', 0)) * 1000
         if measurement == 'torsional':
             Ft = float(kwargs.get('torsional_frequency', 0)) * 1000
+        else:
+            Ft = float(kwargs.get('torsional_frequency', 0)) * 1000
+            Ff = float(kwargs.get('flexural_frequency', 0)) * 1000
         P = float(kwargs['initial_poisson_ratio'])
+
 
         if measurement == 'flexural':
             T1 = Calculator._calc_T1(L, t, P)
