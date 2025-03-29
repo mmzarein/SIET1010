@@ -42,29 +42,56 @@
                             orientation: 'vertical'
                             padding: 10
 
-                            EntryBox:
-                                id: hour
-                                label: 'Hour ='
-                                unit: ''
-                                dialog_title: f'Hour'
-                                lower_limit: 0
-                                upper_limit: 23
+                            MDBoxLayout:
+                                spacing: 10
 
-                            EntryBox:
-                                id: Minute
-                                label: 'Minute ='
-                                unit: ''
-                                dialog_title: f'Minute'
-                                lower_limit: 0
-                                upper_limit: 59
+                                MDLabel:
+                                    text: 'Hour ='
+                                    size_hint: .6, 1
+                                    pos_hint: {'center_y': .5, 'center_x': .5}
+                                    halign: 'right'
 
-                            EntryBox:
-                                id: Second
-                                label: 'Second ='
-                                unit: ''
-                                dialog_title: f'Second'
-                                lower_limit: 0
-                                upper_limit: 59
+                                DateTimeField:
+                                    id: hour_field
+                                    size_hint: .3, None
+                                    mode: 'round'
+                                    pos_hint: {'center_y': .5, 'center_x': .5}
+                                    upper_limit: 0
+                                    lower_limit: 23
+
+                            MDBoxLayout:
+                                spacing: 10
+
+                                MDLabel:
+                                    text: 'Minute ='
+                                    size_hint: .6, 1
+                                    pos_hint: {'center_y': .5, 'center_x': .5}
+                                    halign: 'right'
+
+                                DateTimeField:
+                                    id: minute_field
+                                    size_hint: .3, None
+                                    mode: 'round'
+                                    pos_hint: {'center_y': .5, 'center_x': .5}
+                                    upper_limit: 0
+                                    lower_limit: 23
+
+                            MDBoxLayout:
+                                spacing: 10
+
+                                MDLabel:
+                                    text: 'Second ='
+                                    size_hint: .6, 1
+                                    pos_hint: {'center_y': .5, 'center_x': .5}
+                                    halign: 'right'
+
+                                DateTimeField:
+                                    id: second_field
+                                    size_hint: .3, None
+                                    mode: 'round'
+                                    pos_hint: {'center_y': .5, 'center_x': .5}
+                                    upper_limit: 0
+                                    lower_limit: 23
 
                     MDSeparator:
                         orientation: 'vertical'
@@ -85,30 +112,56 @@
                             orientation: 'vertical'
                             padding: 10
 
-                            EntryBox:
-                                id: Year
-                                label: 'Year ='
-                                unit: ''
-                                dialog_title: f'Year'
-                                lower_limit: 2000
-                                upper_limit: 3000
+                            MDBoxLayout:
+                                spacing: 10
 
-                            EntryBox:
-                                id: Month
-                                label: 'Month ='
-                                unit: ''
-                                dialog_title: f'Month'
-                                lower_limit: 1
-                                upper_limit: 12
+                                MDLabel:
+                                    text: 'Year ='
+                                    size_hint: .6, 1
+                                    pos_hint: {'center_y': .5, 'center_x': .5}
+                                    halign: 'right'
 
-                            EntryBox:
-                                id: Day
-                                label: 'Day ='
-                                unit: ''
-                                dialog_title: f'Day'
-                                lower_limit: 1
-                                upper_limit: 31
+                                DateTimeField:
+                                    id: year_field
+                                    size_hint: .3, None
+                                    mode: 'round'
+                                    pos_hint: {'center_y': .5, 'center_x': .5}
+                                    upper_limit: 0
+                                    lower_limit: 23
 
+                            MDBoxLayout:
+                                spacing: 10
+
+                                MDLabel:
+                                    text: 'Month ='
+                                    size_hint: .6, 1
+                                    pos_hint: {'center_y': .5, 'center_x': .5}
+                                    halign: 'right'
+
+                                DateTimeField:
+                                    id: month_field
+                                    size_hint: .3, None
+                                    mode: 'round'
+                                    pos_hint: {'center_y': .5, 'center_x': .5}
+                                    upper_limit: 0
+                                    lower_limit: 23
+
+                            MDBoxLayout:
+                                spacing: 10
+
+                                MDLabel:
+                                    text: 'Day ='
+                                    size_hint: .6, 1
+                                    pos_hint: {'center_y': .5, 'center_x': .5}
+                                    halign: 'right'
+
+                                DateTimeField:
+                                    id: day_field
+                                    size_hint: .3, None
+                                    mode: 'round'
+                                    pos_hint: {'center_y': .5, 'center_x': .5}
+                                    upper_limit: 0
+                                    lower_limit: 23
 
                 MDSeparator
 
