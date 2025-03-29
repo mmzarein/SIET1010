@@ -6,20 +6,6 @@ from kivy.clock import mainthread
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.textfield import MDTextField
-from kivy.properties import StringProperty
-
-
-class DateTimeField(MDTextField):
-    dialog_title = StringProperty() 
-
-    def on_touch_down(self, touch):
-        if not self.collide_point(*touch.pos): return
-        if isinstance(touch, MouseMotionEvent): return
-        if self.is_output: return
-
-        self.datetime_dialog = MDDialog()
-
-        self.datetime_dialog.open()
 
 
 class Updater:
@@ -161,7 +147,7 @@ class AdvancedSettingsScreen(MDScreen):
 
     def update(self):
         # Define your repository details
-        CLONE_DIR = "/home/pipi/SIET1010/"
+        CLONE_DIR = "/home/pi/SIET1010/"
 
         updater = Updater(CLONE_DIR)
 
