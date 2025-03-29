@@ -8,8 +8,6 @@ from kivy.clock import Clock
 # Configuration Constants
 CHUNK_SIZE = 1024         # Samples per buffer chunk
 RECORD_DURATION = 1       # Duration to record after trigger (seconds)
-THRESHOLD = 2e6           # Amplitude threshold for triggering
-PLOT_SAMPLES = 5000       # Number of samples to show in plot for clarity
 
 class SignalProcessor:
     def __init__(self, manager, sample_rate: int = 196000, n_samples: int = 2**17) -> None:
