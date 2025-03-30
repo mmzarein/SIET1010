@@ -24,159 +24,112 @@
                 size_hint: .8, 1
 
                 MDBoxLayout:
-                    size_hint: 1, .3
+                    size_hint: 1, .4
+                    orientation: 'vertical'
 
                     MDBoxLayout:
-                        size_hint: .5, 1
-                        orientation: 'vertical'
-                        padding: 15, 10, 15, 0
+                        md_bg_color: app.SKY_MIST
+                        size_hint: 1, .2
+                        padding: 20, 0
 
-                        MDBoxLayout:
-                            size_hint: 1, .3
+                        MDLabel:
+                            text: 'Set Date and Time'
 
-                            MDLabel:
-                                text: 'Set Time:'
-                                font_style: 'H5'
-                                underline: True
+                    MDLabel:
+                        size_hint: 1, .8
+                        text: 'This part is under extensive bug fixing. For now, enjoy the void!'
+                        halign: 'center'
 
-                            MDIcon:
-                                icon: 'clock-time-eight-outline'
-
-                        MDBoxLayout:
-                            size_hint: 1, .7
-                            LabelField:
-                                dialog_title: 'Hour:'
-                                hint_text: 'Hour'
-                                pos_hint: {'center_y': .44}
-                                lower_limit: 1
-                                upper_limit: 23
-                            MonoLabel:
-                                text: ':'
-                                size_hint: .2, 1
-                                font_size: 40
-                                color: app.VOID_BLACK
-                            LabelField:
-                                dialog_title: 'Minute:'
-                                hint_text: 'Minute'
-                                pos_hint: {'center_y': .44}
-                                lower_limit: 0
-                                upper_limit: 59
-                            MonoLabel:
-                                text: ':'
-                                size_hint: .2, 1
-                                font_size: 40
-                                color: app.VOID_BLACK
-                            LabelField:
-                                dialog_title: 'Second:'
-                                hint_text: 'Second'
-                                pos_hint: {'center_y': .44}
-                                lower_limit: 0
-                                upper_limit: 59
-
-                    MDSeparator:
-                        orientation: 'vertical'
-
-                    MDBoxLayout:
-                        size_hint: .5, 1
-                        orientation: 'vertical'
-                        padding: 15, 10, 15, 0
-
-                        MDBoxLayout:
-                            size_hint: 1, .3
-                            MDLabel:
-                                text: 'Set Date:'
-                                font_style: 'H5'
-                                underline: True
-                            MDIcon:
-                                icon: 'calendar-month-outline'
-
-                        MDBoxLayout:
-                            size_hint: 1, .7
-                            LabelField:
-                                dialog_title: 'Year:'
-                                hint_text: 'Year'
-                                pos_hint: {'center_y': .44}
-                                lower_limit: 2000
-                                upper_limit: 3000
-                            MonoLabel:
-                                text: '/'
-                                size_hint: .2, 1
-                                font_size: 40
-                                color: app.VOID_BLACK
-                            LabelField:
-                                dialog_title: 'Month:'
-                                hint_text: 'Month'
-                                pos_hint: {'center_y': .44}
-                                lower_limit: 1
-                                upper_limit: 12
-                            MonoLabel:
-                                text: '/'
-                                size_hint: .2, 1
-                                font_size: 40
-                                color: app.VOID_BLACK
-                            LabelField:
-                                dialog_title: 'Day:'
-                                hint_text: 'Day'
-                                pos_hint: {'center_y': .44}
-                                lower_limit: 1
-                                upper_limit: 31
 
                 MDSeparator
 
                 MDBoxLayout:
-                    size_hint: 1, .7
+                    size_hint: 1, .6
                     orientation: 'vertical'
-                    padding: 15
-                    spacing: 50
 
                     MDBoxLayout:
+                        md_bg_color: app.SKY_MIST
                         size_hint: 1, .2
+                        padding: 20, 0
 
                         MDLabel:
-                            text: 'Filter Selection:'
-                            font_style: 'H5'
-                            size_hint: .8, 1
-                            underline: True
+                            text: 'Filter Selection'
 
                         PrimaryButton:
                             id: all_pass_btn
-                            size_hint: .2, 1
                             text: 'All Pass'
                             on_release: root.all_pass()
+                            pos_hint: {'center_y': .5}
 
                     MDBoxLayout:
+                        padding: 10
+                        spacing: 10
+                        size_hint: 1, .8
                         id: frequencies_label
-                        size_hint: .488, .8
-                        orientation: 'vertical'
-                        pos_hint: {'center_x': .5}
 
-                        MDBoxLayout:
-                            spacing: 10
-                            MDLabel:
+                        MDCard:
+                            orientation: 'vertical'
+                            padding: 10
+
+                            MonoLabel:
+                                id: low_freq_label
+                                size_hint: 1, .6
                                 color: app.VOID_BLACK
-                                text: 'High Frequency ='
-                                halign: 'right'
 
-                            LabelField:
-                                id: high_freq_field
+                            MDSlider:
+                                id: low_freq
+                                on_value: root.update_label('low_freq_label', self.value)
+                                size_hint: 1, .2
+                                hint: False
+                                min: 0
+                                step: .01
 
-                            MDLabel:
-                                size_hint: .2, 1
-                                text: 'kHz'
-
-                        MDBoxLayout:
                             MDBoxLayout:
-                                spacing: 10
-                                MDLabel:
-                                    text: 'Low Frequency ='
+                                size_hint: 1, .2
+                                padding: 10, 0
+                                MonoLabel:
+                                    text: 'Min: 0 kHz'
+                                    font_size: 20
+                                    color: app.VOID_BLACK
+                                    halign: 'left'
+
+                                MonoLabel:
+                                    id: low_freq_max
+                                    font_size: 20
+                                    color: app.VOID_BLACK
                                     halign: 'right'
 
-                                LabelField:
-                                    id: low_freq_field
+                        MDCard:
+                            orientation: 'vertical'
+                            padding: 10
 
-                                MDLabel:
-                                    size_hint: .2, 1
-                                    text: 'kHz'
+                            MonoLabel:
+                                id: high_freq_label
+                                size_hint: 1, .6
+                                color: app.VOID_BLACK
+
+                            MDSlider:
+                                id: high_freq
+                                on_value: root.update_label('high_freq_label', self.value)
+                                size_hint: 1, .2
+                                hint: False
+                                max: 48
+                                step: .1
+
+                            MDBoxLayout:
+                                size_hint: 1, .2
+                                padding: 10, 0
+                                MonoLabel:
+                                    id: high_freq_min
+                                    font_size: 20
+                                    color: app.VOID_BLACK
+                                    halign: 'left'
+
+                                MonoLabel:
+                                    text: 'Max: 48 kHz'
+                                    font_size: 20
+                                    color: app.VOID_BLACK
+                                    halign: 'right'
 
             MDSeparator:
                 orientation: 'vertical'
@@ -225,7 +178,7 @@
                 size_hint: .8, 1
 
                 MDBoxLayout:
-                    size_hint: 1, .35
+                    size_hint: 1, .5
                     padding: 15
 
                     MDCard:
@@ -234,21 +187,21 @@
 
                         MonoLabel:
                             id: resolution_label
-                            size_hint: 1, .5
+                            size_hint: 1, .6
                             color: app.VOID_BLACK
 
                         MDSlider:
                             id: resolution_slider
-                            size_hint: 1, .3
+                            size_hint: 1, .2
                             hint: False
                             on_value: root.update_label('resolution', self.value)
                             min: .1
                             max: 10.0
                             step: .1
 
-
                         MDBoxLayout:
                             size_hint: 1, .2
+                            padding: 10, 0
                             MonoLabel:
                                 text: 'Min: 0.1 Hz'
                                 color: app.VOID_BLACK
@@ -262,7 +215,7 @@
                 MDSeparator
 
                 MDBoxLayout:
-                    size_hint: 1, .35
+                    size_hint: 1, .5
                     padding: 15
 
                     MDCard:
@@ -296,12 +249,6 @@
                                 text: 'Max: 5e6'
                                 color: app.VOID_BLACK
                                 halign: 'right'
-
-                MDSeparator
-
-                MDBoxLayout:
-                    size_hint: 1, .30
-
             MDSeparator:
                 orientation: 'vertical'
 
