@@ -141,6 +141,7 @@ class SignalProcessor:
 
         if stop.is_set():
             print('Stop detected! Exiting...')
+            self.home_screen.ids.state_label.text = 'StandBy'
             return False
 
         # Capture data until trigger
@@ -148,6 +149,7 @@ class SignalProcessor:
 
         if stop.is_set():
             print('Stop detected! Exiting...')
+            self.home_screen.ids.state_label.text = 'StandBy'
             return False
 
         # Capture post-trigger recording
@@ -156,61 +158,30 @@ class SignalProcessor:
 
         if stop.is_set():
             print('Stop detected! Exiting...')
+            self.home_screen.ids.state_label.text = 'StandBy'
             return False
 
         # Calculating FFT
         self.fft_data, self.fft_freqs = self.calculate_fft(post_trigger)
 
+        if stop.is_set():
+            print('Stop detected! Exiting...')
+            self.home_screen.ids.state_label.text = 'StandBy'
+            return False
+
         peaks = self.get_peaks()
 
         peaks = self.fft_frequencies[peaks]
 
+        if stop.is_set():
+            print('Stop detected! Exiting...')
+            self.home_screen.ids.state_label.text = 'StandBy'
+            return False
+
         Clock.schedule_once(lambda dt: callback(True, post_trigger, peaks))
+
         self.home_screen.ids.state_label.text = 'StandBy'
-        return True
 
-
-    def draft_run(self, stop_event, callback):
-        print('Starting signal processing...')
-
-        # Step 1: Generate the signal
-        print('Generating signal...')
-        time.sleep(1)  # Simulate a 2-second task
-        signal = self.generate_test_signal()
-        if stop_event.is_set():
-            print('Stop event detected after generating signal. Exiting...')
-            return False
-
-        if False: # TMP: Just to test the behavior in Unexpected situations!
-            print('Holy shit, unexpected Error!!!! Fuck my life!!!')
-            Clock.schedule_once(lambda dt: callback(False, [], []))
-            return False
-
-        # Step 2: Compute FFT
-        print('Computing FFT...')
-        time.sleep(1)  # Simulate a 2-second task
-        fft_result, magnitude = self.compute_fft(signal)
-        if stop_event.is_set():
-            print('Stop event detected after computing FFT. Exiting...')
-            return False
-
-        # Step 3: Find peaks
-        print('Finding peaks...')
-        time.sleep(1)  # Simulate a 2-second task
-        peaks = fft_result[self.find_peaks()]
-        if stop_event.is_set():
-            print('Stop event detected after finding peaks. Exiting...')
-            return False
-
-        # Step 4: Update UI or finalize
-        print('Updating UI...')
-        # time.sleep(1)  # Simulate a 2-second task
-        if stop_event.is_set():
-            print('Stop event detected before updating UI. Exiting...')
-            return False
-
-        Clock.schedule_once(lambda dt: callback(True, signal, peaks))
-        print('Signal processing completed.')
         return True
 
 

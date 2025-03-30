@@ -55,10 +55,57 @@ class GeneralSettingsScreen(MDScreen):
         super().__init__(**kwargs)
 
     def on_enter(self):
-        pass
+        self.low_frequency = float(self.manager.config_manager.get(
+            'SIET1010',
+            'low_frequency'
+        ))
+        self.high_frequency = float(self.manager.config_manager.get(
+            'SIET1010',
+            'high_frequency'
+        ))
+        self.update_label('low_freq_label', self.low_frequency)
+        self.ids.low_freq.value = self.low_frequency
+        self.update_label('high_freq_label', self.high_frequency)
+        self.ids.high_freq.value = self.high_frequency
+        self.all_pass_value = self.manager.config_manager.getboolean(
+            'SIET1010',
+            'all_pass'
+        )
+        self.ids.all_pass_btn.icon = 'check' if self.all_pass_value else 'close'
+        self.all_pass()
 
     def save(self):
-        return
+        self.manager.config_manager.set(
+            'SIET1010', 'low_frequency', round(self.ids.low_freq.value, 2)
+        )
+        self.manager.config_manager.set(
+            'SIET1010', 'high_frequency', round(self.ids.high_freq.value, 2)
+        )
+        self.manager.config_manager.save()
+
+    def update_label(self, label, value):
+        if label == 'low_freq_label':
+            self.ids.low_freq_label.text = f'Low Frequency: {value:.2f} kHz'
+            self.ids.high_freq.min = value
+            self.ids.high_freq_min.text = f'Min: {value:.2f} kHz'
+        else:
+            self.ids.high_freq_label.text = f'High Frequency: {value:.2f} kHz'
+            self.ids.low_freq.max = value
+            self.ids.low_freq_max.text = f'Max: {value:.2f} kHz'
+
+    def all_pass(self):
+        is_checked = self.ids.all_pass_btn.icon == 'check'
+        self.ids.all_pass_btn.icon = 'close' if is_checked else 'check'
+        bg_color = self.manager.app.STALE_BLUE if is_checked else self.manager.app.PURE_LIGHT
+        text_color = self.manager.app.PURE_LIGHT if is_checked else self.manager.app.VOID_BLACK
+        opacity = .6 if is_checked else 1
+        disabled = is_checked
+        self.ids.all_pass_btn.md_bg_color = bg_color
+        self.ids.all_pass_btn.text_color = text_color
+        self.ids.all_pass_btn.icon_color = text_color
+        self.ids.frequencies_label.opacity = opacity
+        self.ids.low_freq.disabled = disabled
+        self.ids.high_freq.disabled = disabled
 
 
 class AdvancedSettingsScreen(MDScreen):
@@ -97,8 +144,8 @@ class AdvancedSettingsScreen(MDScreen):
     def update_label(self, label, value):
         if label == 'resolution':
             self.ids.resolution_label.text = f'Resolution: {value:.1f}'
-        else:
-            self.ids.sensitivity_label.text = f'Sensitivity: {value:.1f}'
+        elif label == 'sensitivity':
+            self.ids.sensitivity_label.text = f'Sensitivity: ± {value:.1f}'
 
     def update(self):
         # Define your repository details
