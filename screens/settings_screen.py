@@ -143,7 +143,7 @@ class AdvancedSettingsScreen(MDScreen):
 
     def update_label(self, label, value):
         if label == 'resolution':
-            self.ids.resolution_label.text = f'Resolution: {value:.1f}'
+            self.ids.resolution_label.text = f'Resolution: {value:.1f} Hz'
         elif label == 'sensitivity':
             self.ids.sensitivity_label.text = f'Sensitivity: ± {value:.1f}'
 
