@@ -45,7 +45,7 @@ class Updater:
         os.system('rm -rf ./update')
         self.update_dialog.text = 'Cloning from GitHub!'
         os.system('git clone https://github.com/mmzarein/SIET1010.git ./update')
-        os.system('cd ./update/ && git checkout refactor && cd ..')
+        # os.system('cd ./update/ && git checkout refactor && cd ..')
         self.update_dialog.text = 'Installing the update!'
         os.system(f'rsync -av --remove-source-files ./update/* {self.clone_dir}')
         self.update_dialog.text = 'Clean Up!'
