@@ -38,7 +38,11 @@ class HomeScreen(MDScreen):
                 widget.text = f"{label:<15} --- {'':<2}kHz"
         else:
             for widget, label, peak in zip(widgets, labels, peaks):
-                widget.text = f"{label:<13} {peak:.5f} {'':<2}kHz"
+                if isinstance(peak, float):
+                    peak /= 1000
+                    widget.text = f"{label:<13} {peak:.4f} {'':<2}kHz"
+                else:
+                    widget.text = f"{label:<15} --- {'':<2}kHz"
 
     def start_stop(self, success):
         if self.recording:

@@ -2,10 +2,23 @@ import os
 import shutil
 import subprocess
 import threading
+from datetime import datetime
 from kivy.clock import mainthread
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.textfield import MDTextField
+from kivy.uix.boxlayout import BoxLayout
+from kivymd.uix.button import MDFlatButton
+from kivymd.uix.label import MDLabel
+from kivy.input.providers.mouse import MouseMotionEvent
+
+
+class SecondaryButton(MDFlatButton):
+
+    def on_touch_down(self, touch):
+        if self.collide_point(*touch.pos):
+            if not isinstance(touch, MouseMotionEvent):
+                super().on_touch_down(touch)
 
 
 class Updater:
@@ -50,6 +63,12 @@ class Updater:
         self.update_dialog.text = 'Done!'
 
 
+class SetTimeContent(BoxLayout): pass
+
+
+class SetDateContent(BoxLayout): pass
+
+
 class GeneralSettingsScreen(MDScreen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -74,7 +93,31 @@ class GeneralSettingsScreen(MDScreen):
         self.ids.all_pass_btn.icon = 'check' if self.all_pass_value else 'close'
         self.all_pass()
 
+    def open_save_dialog(self):
+        self.save_dialog = MDDialog(
+            title='Save?',
+            text='These changes cannot be reverted!',
+            buttons=[
+                SecondaryButton(
+                    text='CANCEL',
+                    text_color=self.theme_cls.error_color,
+                    theme_text_color='Custom',
+                    on_release=lambda _: self.save_dialog.dismiss()
+                ),
+                SecondaryButton(
+                    text='OK',
+                    text_color=self.theme_cls.primary_color,
+                    theme_text_color='Custom',
+                    on_release=lambda _: self.save()
+                )
+            ]
+        )
+        self.save_dialog.open()
+
     def save(self):
+        self.manager.config_manager.set(
+            'SIET1010', 'all_pass', self.is_checked
+        )
         self.manager.config_manager.set(
             'SIET1010', 'low_frequency', round(self.ids.low_freq.value, 2)
         )
@@ -82,19 +125,21 @@ class GeneralSettingsScreen(MDScreen):
             'SIET1010', 'high_frequency', round(self.ids.high_freq.value, 2)
         )
         self.manager.config_manager.save()
+        self.save_dialog.dismiss()
 
     def update_label(self, label, value):
         if label == 'low_freq_label':
-            self.ids.low_freq_label.text = f'Low Frequency: {value:.2f} kHz'
+            self.ids.low_freq_label.text = f'Low Frequency: {int(value)} kHz'
             self.ids.high_freq.min = value
-            self.ids.high_freq_min.text = f'Min: {value:.2f} kHz'
+            self.ids.high_freq_min.text = f'Min: {int(value)} kHz'
         else:
-            self.ids.high_freq_label.text = f'High Frequency: {value:.2f} kHz'
+            self.ids.high_freq_label.text = f'High Frequency: {int(value)} kHz'
             self.ids.low_freq.max = value
-            self.ids.low_freq_max.text = f'Max: {value:.2f} kHz'
+            self.ids.low_freq_max.text = f'Max: {int(value)} kHz'
 
     def all_pass(self):
         is_checked = self.ids.all_pass_btn.icon == 'check'
+        self.is_checked = is_checked
         self.ids.all_pass_btn.icon = 'close' if is_checked else 'check'
         bg_color = self.manager.app.STALE_BLUE if is_checked else self.manager.app.PURE_LIGHT
         text_color = self.manager.app.PURE_LIGHT if is_checked else self.manager.app.VOID_BLACK
@@ -107,6 +152,166 @@ class GeneralSettingsScreen(MDScreen):
         self.ids.low_freq.disabled = disabled
         self.ids.high_freq.disabled = disabled
 
+    def open_set_time_dialog(self):
+        self.set_time_dialog = MDDialog(
+            title='Set Time',
+            type='custom',
+            pos_hint={'center_x': .5, 'center_y': .8},
+            content_cls=SetTimeContent(),
+            buttons=[
+                SecondaryButton(
+                    text='CANCEL',
+                    text_color=self.theme_cls.error_color,
+                    theme_text_color='Custom',
+                    on_release=lambda _: self.set_time_dialog.dismiss()
+                ),
+                SecondaryButton(
+                    text='OK',
+                    text_color=self.theme_cls.primary_color,
+                    theme_text_color='Custom',
+                    on_release=lambda _: self.apply_time()
+                )
+            ]
+        )
+        self.set_time_dialog.open()
+
+    def apply_time(self):
+        current_date = datetime.now().date()
+
+        content = self.set_time_dialog.content_cls
+        if hasattr(self, 'error_label'):
+            content.remove_widget(self.error_label)
+        self.error_label = MDLabel(id='error_msg', theme_text_color='Custom', text_color=(1, 0, 0, 1))
+        hour_str = self.set_time_dialog.content_cls.ids.hour_field.text.strip()
+        minute_str = self.set_time_dialog.content_cls.ids.minute_field.text.strip()
+        second_str = self.set_time_dialog.content_cls.ids.second_field.text.strip()
+
+
+        # Step 2: Validate numeric input
+        if not (hour_str.isdigit() and minute_str.isdigit() and second_str.isdigit()):
+            self.error_label.text = 'Invalid input: All time fields must be numbers.'
+            content.add_widget(self.error_label)
+            return
+
+        hour = int(hour_str)
+        minute = int(minute_str)
+        second = int(second_str)
+
+        # Step 3: Validate time ranges
+        if not (0 <= hour < 24):
+            self.error_label.text = 'Invalid hour: must be 0–23.'
+            content.add_widget(self.error_label)
+            return
+        if not (0 <= minute < 60):
+            self.error_label.text = 'Invalid minute: must be 0–59.'
+            content.add_widget(self.error_label)
+            return
+        if not (0 <= second < 60):
+            self.error_label.text = 'Invalid minute: must be 0–59.'
+            content.add_widget(self.error_label)
+            return
+
+        # Step 3: Combine date + new time
+        time_str = f"{hour}:{minute}:{second}"
+        new_datetime = datetime.strptime(f"{current_date} {time_str}", "%Y-%m-%d %H:%M:%S")
+
+        # Step 4: Format for Linux date command
+        formatted_time = new_datetime.strftime("%Y-%m-%d %H:%M:%S")
+
+        print(os.system(f"sudo date -s '{formatted_time}'"))
+        # Step 5: Set system time using os.system
+        os.system(f"sudo date -s '{formatted_time}'")
+
+        # Optional: sync to RTC using os.system
+        os.system("sudo hwclock -w")
+
+        self.set_time_dialog.dismiss()
+
+    def open_set_date_dialog(self):
+        self.set_date_dialog = MDDialog(
+            title='Set Date',
+            type='custom',
+            pos_hint={'center_x': .5, 'center_y': .8},
+            content_cls=SetDateContent(),
+            buttons=[
+                SecondaryButton(
+                    text='CANCEL',
+                    text_color=self.theme_cls.error_color,
+                    theme_text_color='Custom',
+                    on_release=lambda _: self.set_date_dialog.dismiss()
+                ),
+                SecondaryButton(
+                    text='OK',
+                    text_color=self.theme_cls.primary_color,
+                    theme_text_color='Custom',
+                    on_release=lambda _: self.apply_date()
+                )
+            ]
+        )
+        self.set_date_dialog.open()
+
+    def apply_date(self):
+
+        content = self.set_date_dialog.content_cls
+
+        if hasattr(self, 'date_error_label'):
+            content.remove_widget(self.date_error_label)
+
+        self.date_error_label = MDLabel(id='error_msg', theme_text_color='Custom', text_color=(1, 0, 0, 1))
+
+        # Step 1: Get input from text fields
+        day_str = self.set_date_dialog.content_cls.ids.day_field.text.strip()
+        month_str = self.set_date_dialog.content_cls.ids.month_field.text.strip()
+        year_str = self.set_date_dialog.content_cls.ids.year_field.text.strip()
+
+        # Step 2: Validate numeric input
+        if not (day_str.isdigit() and month_str.isdigit() and year_str.isdigit()):
+            self.date_error_label.text = 'Invalid input: All date fields must be numbers.'
+            content.add_widget(self.date_error_label)
+            return
+
+        day = int(day_str)
+        month = int(month_str)
+        year = int(year_str)
+
+        # Step 3: Validate ranges (basic)
+        if not (1 <= month <= 12):
+            self.date_error_label.text = 'Invalid month: must be 1–12.'
+            content.add_widget(self.date_error_label)
+            return
+        if not (1 <= day <= 31):
+            self.date_error_label.text = 'Invalid day: must be 1–31.'
+            content.add_widget(self.date_error_label)
+            return
+        if not (2025 <= year <= 2100):  # Unix time safe range
+            self.date_error_label.text = 'Invalid year: must be 2025–2100.'
+            content.add_widget(self.date_error_label)
+            return
+
+        try:
+            # Step 4: Validate full date (e.g., Feb 30 → error)
+            new_date = datetime(year, month, day)
+        except ValueError as e:
+            self.date_error_label.text = 'Invalid Date!'
+            content.add_widget(self.date_error_label)
+            return
+
+        # Step 5: Get current time
+        current_time = datetime.now().time()
+        # Step 6: Combine new date with current time
+        new_datetime = datetime.combine(new_date, current_time)
+
+        # Step 7: Format for date command
+        formatted_datetime = new_datetime.strftime("%Y-%m-%d %H:%M:%S")
+
+        # Step 8: Set system date using os.system
+        os.system(f"sudo date -s '{formatted_datetime}'")
+
+        # Optional: sync system date to RTC
+        os.system("sudo hwclock -w")
+
+        # Step 9: Dismiss dialog
+        self.set_date_dialog.dismiss()
 
 class AdvancedSettingsScreen(MDScreen):
     def __init__(self, **kwargs):
@@ -132,6 +337,27 @@ class AdvancedSettingsScreen(MDScreen):
         self.manager.current = 'general_settings'
         self.manager.transition.direction = 'down'
 
+    def open_save_dialog(self):
+        self.save_dialog = MDDialog(
+            title='Save?',
+            text='These changes cannot be reverted!',
+            buttons=[
+                SecondaryButton(
+                    text='CANCEL',
+                    text_color=self.theme_cls.error_color,
+                    theme_text_color='Custom',
+                    on_release=lambda _: self.save_dialog.dismiss()
+                ),
+                SecondaryButton(
+                    text='OK',
+                    text_color=self.theme_cls.primary_color,
+                    theme_text_color='Custom',
+                    on_release=lambda _: self.save()
+                )
+            ]
+        )
+        self.save_dialog.open()
+
     def save(self):
         self.manager.config_manager.set(
             'SIET1010', 'resolution', round(self.ids.resolution_slider.value, 2)
@@ -140,6 +366,7 @@ class AdvancedSettingsScreen(MDScreen):
             'SIET1010', 'sensitivity', round(self.ids.sensitivity_slider.value, 2)
         )
         self.manager.config_manager.save()
+        self.save_dialog.dismiss()
 
     def update_label(self, label, value):
         if label == 'resolution':

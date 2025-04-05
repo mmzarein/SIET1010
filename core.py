@@ -38,7 +38,7 @@ class SignalProcessor:
         '''Find the peaks in the single-sided magnitude spectrum.'''
         self.fft_magnitude = np.abs(self.fft_data)[:len(self.fft_data)//2]
         self.fft_frequencies = self.fft_freqs[:len(self.fft_data)//2]
-        peaks, _ = find_peaks(self.fft_magnitude)
+        peaks, _ = find_peaks(self.fft_magnitude, distance=100)
         sorted_indices = np.argsort(self.fft_magnitude[peaks])[::-1]
         self.peaks = peaks[sorted_indices[:3]]
         return self.peaks
@@ -46,25 +46,76 @@ class SignalProcessor:
     def plot_wave(self) -> plt.Figure:
         '''Plot the time-domain representation of the signal.'''
         wave_fig, wave_ax = plt.subplots(layout='constrained')
-        wave_ax.plot(self.signal)
+        wave_ax.plot(self.time_ms, self.normalized_signal)
         wave_ax.grid()
         wave_ax.set_xlabel('Time (ms)', fontsize=13, labelpad=10)
         wave_ax.set_ylabel('Amplitude (v)', fontsize=13, labelpad=10)
         return wave_fig
 
-    def plot_fft(self) -> plt.Figure:
+    def plot_fft_bak(self) -> plt.Figure:
         '''Plot the frequency-domain representation (FFT) and mark the detected peaks.'''
         fft_fig, fft_ax = plt.subplots(layout='constrained')
-        fft_ax.plot(self.fft_freqs[:len(self.fft_data)//2], np.abs(self.fft_data)[:len(self.fft_data)//2])
+        x_axis = self.fft_freqs[:len(self.fft_data)//2]
+        y_axis = np.abs(self.fft_data)[:len(self.fft_data)//2]
+        # Normalize y_axis to the range [0, 1]
+        y_axis = y_axis / np.max(y_axis)
+        fft_ax.plot(x_axis, y_axis)
+        if self.all_pass_value:
+            fft_ax.set_xlim(0, 24000)
+        else:
+            fft_ax.set_xlim(
+                self.low_frequency * 1000,
+                self.high_frequency * 1000
+            )
         fft_ax.scatter(
             self.fft_frequencies[self.peaks],
-            self.fft_magnitude[self.peaks],
+            self.fft_magnitude[self.peaks] / np.max(self.fft_magnitude),
             facecolors='none', edgecolors='red', marker='s', s=100,
         )
         fft_ax.grid()
-        fft_ax.set_xlabel('Frequency (kHz)', fontsize=13, labelpad=10)
+        fft_ax.set_xlabel('Frequency (Hz)', fontsize=13, labelpad=10)
         fft_ax.set_ylabel('Amplitude (v)', fontsize=13, labelpad=10)
         return fft_fig
+
+    def plot_fft(self):
+        fft_fig, fft_ax = plt.subplots(layout='constrained')
+
+        # Prepare the frequency and amplitude data
+        x_axis = self.fft_freqs[:len(self.fft_data)//2]
+        y_axis = np.abs(self.fft_data)[:len(self.fft_data)//2]
+
+        # Normalize y_axis to [0, 1]
+        y_axis = y_axis / np.max(y_axis)
+
+        # Determine frequency bounds
+        if self.all_pass_value:
+            low_bound = 1000     # 1 kHz
+            high_bound = 24000   # 24 kHz
+        else:
+            low_bound = self.low_frequency * 1000
+            high_bound = self.high_frequency * 1000
+        # Create mask for trimming
+        freq_mask = (x_axis >= low_bound) & (x_axis <= high_bound)
+        x_axis = x_axis[freq_mask]
+        y_axis = y_axis[freq_mask]
+
+        # Plot the peaks within the same range
+        peak_freqs = self.fft_frequencies[self.peaks]
+        peak_amps = self.fft_magnitude[self.peaks] / np.max(self.fft_magnitude)
+        peak_mask = (peak_freqs >= low_bound) & (peak_freqs <= high_bound)
+        fft_ax.scatter(
+            peak_freqs[peak_mask],
+            peak_amps[peak_mask],
+            facecolors='none', edgecolors='red', marker='s', s=100,
+        )
+
+        # Plot the trimmed FFT data
+        fft_ax.plot(x_axis, y_axis)
+        fft_ax.grid()
+        fft_ax.set_xlabel('Frequency (Hz)', fontsize=13, labelpad=10)
+        fft_ax.set_ylabel('Amplitude (v)', fontsize=13, labelpad=10)
+        return fft_fig
+
 
     def generate_test_signal(self) -> np.ndarray:
         '''Generate a test signal (used internally).'''
@@ -93,7 +144,7 @@ class SignalProcessor:
         """Capture audio data until threshold is exceeded."""
         pre_trigger_data = []
         print("Listening for trigger...")
-        self.home_screen.ids.state_label.text = 'Listening'
+        self.home_screen.ids.state_label.text = 'Detecting'
 
         while True:
             raw_data = stream.read(CHUNK_SIZE, exception_on_overflow=False)
@@ -124,6 +175,21 @@ class SignalProcessor:
 
     def run(self, stop, callback):
 
+        self.all_pass_value = self.manager.config_manager.getboolean(
+            'SIET1010',
+            'all_pass'
+        )
+
+        self.low_frequency = float(self.manager.config_manager.get(
+            'SIET1010',
+            'low_frequency'
+        ))
+
+        self.high_frequency = float(self.manager.config_manager.get(
+            'SIET1010',
+            'high_frequency'
+        ))
+
         self.resolution = self.manager.config_manager.get(
             'SIET1010',
             'resolution'
@@ -133,6 +199,8 @@ class SignalProcessor:
             'SIET1010',
             'sensitivity'
         ))
+
+        self.threshold = self.threshold * 1e6
 
         audio, stream = None, None
 
@@ -155,6 +223,8 @@ class SignalProcessor:
         # Capture post-trigger recording
         post_trigger = self.record_after_trigger(stream)
         self.signal = post_trigger
+        self.normalized_signal = 2 * (self.signal - np.min(self.signal)) / (np.max(self.signal) - np.min(self.signal)) - 1
+        self.time_ms = np.arange(len(self.signal)) / self.sample_rate * 1000
 
         if stop.is_set():
             print('Stop detected! Exiting...')

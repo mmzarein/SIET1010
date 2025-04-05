@@ -63,7 +63,7 @@
                                 id: state_label
                                 text: 'StandBy'
                                 halign: 'center'
-                                font_style: 'H4'
+                                font_style: 'H3'
 
                 MDBoxLayout:
                     size_hint: .5, 1
@@ -76,6 +76,7 @@
                         text: 'Start'
                         icon: 'microphone-outline'
                         on_release: root.start_stop(False)
+                        font_size: 30
 
                     PrimaryButton:
                         id: calculation_btn
