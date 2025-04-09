@@ -237,7 +237,7 @@
             left_action: lambda: root.manager.back('down')
             right_icon: 'content-save-cog-outline'
             right_label: 'Save'
-            right_action: root.open_save_dialog
+            right_action: root.save
 
 <AdvancedSettingsScreen>:
     name: 'advanced_settings'
@@ -361,12 +361,12 @@
                             size_hint: 1, .2
                             padding: 10, 0
                             MonoLabel:
-                                text: 'Min: 1.0'
+                                text: 'Min: 1.0 Hz'
                                 color: app.VOID_BLACK
                                 halign: 'left'
 
                             MonoLabel:
-                                text: 'Max: 5.0'
+                                text: 'Max: 300 Hz'
                                 color: app.VOID_BLACK
                                 halign: 'right'
 

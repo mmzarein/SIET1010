@@ -348,6 +348,24 @@ class ModulusScreen(MDScreen):
             'measurement_type': self.bar_choice
         }
 
+        length = float(inputs['length'])
+        width = float(inputs['width'])
+        thickness = float(inputs['thickness'])
+
+        if not (length >= width >= thickness):
+            self.bar_error_dialog = MDDialog(
+                title='Invalid dimensions!',
+                text='Make sure: Length >= Width >= Thickness',
+                buttons=[
+                    MDFlatButton(
+                        text='OK',
+                        on_release=lambda _: self.bar_error_dialog.dismiss()
+                    )
+                ]
+            )
+            self.bar_error_dialog.open()
+            return
+
         result = self.manager.calculator.bar(**inputs)
         self.ids.bar_young_modulus_output.ids.label_field.text = result['dynamic_young_modulus_output']
         self.ids.bar_shear_modulus_output.ids.label_field.text = result['dynamic_shear_modulus_output']
@@ -366,6 +384,23 @@ class ModulusScreen(MDScreen):
             'measurement_type': self.rod_choice
         }
 
+        length = float(inputs['length'])
+        diameter = float(inputs['diameter'])
+
+        if not (length >= diameter):
+            self.rod_error_dialog = MDDialog(
+                title='Invalid dimensions!',
+                text='Make sure: Length >= Diameter',
+                buttons=[
+                    MDFlatButton(
+                        text='OK',
+                        on_release=lambda _: self.rod_error_dialog.dismiss()
+                    )
+                ]
+            )
+            self.rod_error_dialog.open()
+            return
+
         result = self.manager.calculator.rod(**inputs)
         self.ids.rod_young_modulus_output.ids.label_field.text = result['dynamic_young_modulus_output']
         self.ids.rod_shear_modulus_output.ids.label_field.text = result['dynamic_shear_modulus_output']
@@ -381,6 +416,23 @@ class ModulusScreen(MDScreen):
             'first_frequency': self.ids.disc_first_frequency.ids.label_field.text,
             'second_frequency': self.ids.disc_second_frequency.ids.label_field.text,
         }
+
+        diameter = float(inputs['diameter'])
+        thickness = float(inputs['thickness'])
+
+        if not (diameter >= thickness):
+            self.rod_error_dialog = MDDialog(
+                title='Invalid dimensions!',
+                text='Make sure: Diameter >= Thickness',
+                buttons=[
+                    MDFlatButton(
+                        text='OK',
+                        on_release=lambda _: self.rod_error_dialog.dismiss()
+                    )
+                ]
+            )
+            self.rod_error_dialog.open()
+            return
 
         result = self.manager.calculator.disc(**inputs)
         self.ids.disc_young_modulus_output.ids.label_field.text = result['dynamic_young_modulus_output']

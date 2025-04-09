@@ -28,7 +28,7 @@ class HomeScreen(MDScreen):
             self.ids.third_peak
         ]
         labels = [
-            'KIR!',
+            'First Peak:',
             'Second Peak:',
             'Third Peak:'
         ]

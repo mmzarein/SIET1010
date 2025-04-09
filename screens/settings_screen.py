@@ -2,6 +2,7 @@ import os
 import shutil
 import subprocess
 import threading
+import socket
 from datetime import datetime
 from kivy.clock import mainthread
 from kivymd.uix.screen import MDScreen
@@ -27,10 +28,20 @@ class Updater:
 
         self.update_dialog = MDDialog(
             title='Update',
-            text='The app is updating itself in the most inefficient and insecure way possible. Do not close the app, for God\'s sake!'
+            text='The app is updating itself. Do not close the app!',
+            buttons=[
+                MDFlatButton(
+                    text='OK',
+                    on_release=lambda _: self.update_dialog.dismiss()
+                )
+            ]
         )
 
     def update(self):
+        if not self._check_internet_connection():
+            self.update_dialog.text = 'No internet connection. Please check your network.'
+            self.update_dialog.open()
+            return
         threading.Thread(target=self._perform_update, daemon=True).start()
         self.update_dialog.open()
 
@@ -42,14 +53,8 @@ class Updater:
             print(f"Update failed: {e}")
 
     def _clone_or_pull_repo(self):
-        os.system('rm -rf ./update')
-        self.update_dialog.text = 'Cloning from GitHub!'
-        os.system('git clone https://github.com/mmzarein/SIET1010.git ./update')
-        # os.system('cd ./update/ && git checkout refactor && cd ..')
-        self.update_dialog.text = 'Installing the update!'
-        os.system(f'rsync -av --remove-source-files ./update/* {self.clone_dir}')
-        self.update_dialog.text = 'Clean Up!'
-        os.system('rm -rf ./update')
+        self.update_dialog.text = 'Pulling from GitHub!'
+        os.system('git pull')
 
     def _install_dependencies(self):
         requirements_path = os.path.join(self.clone_dir, "requirements.txt")
@@ -61,6 +66,16 @@ class Updater:
             print("No requirements.txt found, skipping dependency installation.")
 
         self.update_dialog.text = 'Done!'
+
+    def _check_internet_connection(self):
+        try:
+            # Try to connect to a reliable server (Google DNS).
+            socket.create_connection(("8.8.8.8", 53), timeout=5)
+            return True
+        except socket.error as e:
+            self.update_dialog.text = f'Network error: {e}. Please check your network.'
+            self.update_dialog.open()
+            return False
 
 
 class SetTimeContent(BoxLayout): pass
@@ -95,20 +110,13 @@ class GeneralSettingsScreen(MDScreen):
 
     def open_save_dialog(self):
         self.save_dialog = MDDialog(
-            title='Save?',
-            text='These changes cannot be reverted!',
+            title='Done!',
             buttons=[
-                SecondaryButton(
-                    text='CANCEL',
-                    text_color=self.theme_cls.error_color,
-                    theme_text_color='Custom',
-                    on_release=lambda _: self.save_dialog.dismiss()
-                ),
                 SecondaryButton(
                     text='OK',
                     text_color=self.theme_cls.primary_color,
                     theme_text_color='Custom',
-                    on_release=lambda _: self.save()
+                    on_release=lambda _: self.save_dialog.dismiss()
                 )
             ]
         )
@@ -125,17 +133,17 @@ class GeneralSettingsScreen(MDScreen):
             'SIET1010', 'high_frequency', round(self.ids.high_freq.value, 2)
         )
         self.manager.config_manager.save()
-        self.save_dialog.dismiss()
+        self.open_save_dialog()
 
     def update_label(self, label, value):
         if label == 'low_freq_label':
             self.ids.low_freq_label.text = f'Low Frequency: {int(value)} kHz'
-            self.ids.high_freq.min = value
-            self.ids.high_freq_min.text = f'Min: {int(value)} kHz'
+            self.ids.high_freq.min = value + 1
+            self.ids.high_freq_min.text = f'Min: {int(value) + 1} kHz'
         else:
             self.ids.high_freq_label.text = f'High Frequency: {int(value)} kHz'
-            self.ids.low_freq.max = value
-            self.ids.low_freq_max.text = f'Max: {int(value)} kHz'
+            self.ids.low_freq.max = value - 1
+            self.ids.low_freq_max.text = f'Max: {int(value) - 1} kHz'
 
     def all_pass(self):
         is_checked = self.ids.all_pass_btn.icon == 'check'
@@ -377,7 +385,7 @@ class AdvancedSettingsScreen(MDScreen):
         elif label == 'sensitivity':
             self.ids.sensitivity_label.text = f'Sensitivity: ± {value:.1f}'
         elif label == 'distance':
-            self.ids.distance_label.text = f'Dismiss: {int(value)}'
+            self.ids.distance_label.text = f'Distance: {int(value)} Hz'
 
     def update(self):
         # Define your repository details
