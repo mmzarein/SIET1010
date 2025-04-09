@@ -21,6 +21,7 @@ from kivymd.uix.button import MDFlatButton
 from kivymd.uix.progressbar import MDProgressBar
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.datatables import MDDataTable
+from kivy.input.providers.mouse import MouseMotionEvent
 from kivymd.uix.datatables.datatables import (
     TableData,
     TableRecycleGridLayout
@@ -31,6 +32,14 @@ TableRecycleGridLayout.select_row = MethodType(
     lambda self, _: None,
     TableRecycleGridLayout
 )
+
+
+class OneTimeTriggererFlatbutton(MDFlatButton):
+    def on_touch_down(self, touch):
+        if self.collide_point(*touch.pos):
+            if not isinstance(touch, MouseMotionEvent):
+                super().on_touch_down(touch)
+
 
 
 def _get_checked_rows(self):
@@ -174,6 +183,7 @@ class ArchiveScreen(MDScreen):
         self.set_default_dialog.dismiss()
 
     def show_create_directory_dialog(self):
+        print('Directory')
         self.create_directory_dialog = MDDialog(
             title='New Folder',
             type='custom',
@@ -199,6 +209,7 @@ class ArchiveScreen(MDScreen):
         self.create_directory_dialog.open()
 
     def show_rename_dialog(self):
+        print('Rename')
         selected_rows = self.table.get_row_checks()
         if not selected_rows or len(selected_rows) != 1:
             return
@@ -235,6 +246,7 @@ class ArchiveScreen(MDScreen):
         self.rename_dialog.open()
 
     def show_delete_dialog(self):
+        print('Delete!')
         # TODO: This function may need some improvments!
         selected_rows = self.table.get_row_checks()
         if not selected_rows:
@@ -455,7 +467,7 @@ class ArchiveScreen(MDScreen):
                             theme_text_color='Custom',
                             on_release=lambda _: self.copy_on_usb_dialog.dismiss()
                         ),
-                        MDFlatButton(
+                        OneTimeTriggererFlatbutton(
                             text='OK',
                             # Only available in KivyMD 1.2.0!
                             text_color=self.theme_cls.primary_color,
@@ -524,6 +536,12 @@ class ArchiveScreen(MDScreen):
                     theme_text_color='Custom',
                     text_color=self.theme_cls.error_color,
                     on_release=lambda _: self.cancel_copy()
+                ),
+                MDFlatButton(
+                    text='OK',
+                    theme_text_color='Custom',
+                    text_color=self.theme_cls.primary_color,
+                    on_release=lambda _: self.progress_dialog.dismiss()
                 )
             ]
         )
@@ -559,27 +577,30 @@ class ArchiveScreen(MDScreen):
                         break
 
                     dest = os.path.join(dst_path, os.path.basename(src))
-                    if os.path.exists(dest) and False:
+                    if os.path.exists(dest):
+                        self.progress_dialog.dismiss()
                         raise Exception(
-                            f'Destination already exists: {os.path.basename(dest)}')
+                            f'Destination already exists: {os.path.basename(dest)}'
+                        )
                     copy_recursive(src, dest)
 
-                Clock.schedule_once(lambda dt: self.progress_dialog.dismiss())
+                # Clock.schedule_once(lambda dt: self.progress_dialog.dismiss())
                 Clock.schedule_once(lambda dt: self.refresh())
             except Exception as e:
                 error_message = str(e)
                 Clock.schedule_once(
                     lambda dt, msg=error_message: self.show_error_dialog(msg))
             finally:
-                Clock.schedule_once(lambda dt: self.progress_dialog.dismiss())
-                self.progress_dialog.dismiss()
+                # Clock.schedule_once(lambda dt: self.progress_dialog.dismiss())
+                # self.progress_dialog.dismiss()
+                self.progress_dialog.title = 'Done!'
 
         threading.Thread(
             target=copy_in_thread,
             args=(src_list, dst_path),
             daemon=True
         ).start()
-        self.progress_dialog.dismiss()
+        # self.progress_dialog.dismiss()
         self.copy_on_usb_dialog.dismiss()
 
     def update_progress(self, progress):

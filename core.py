@@ -35,13 +35,55 @@ class SignalProcessor:
         fft_freqs = np.fft.fftfreq(len(fft_data), 1/self.sample_rate)
         return fft_data, fft_freqs
 
-    def get_peaks(self) -> np.ndarray:
+    def get_peaks_bak(self) -> np.ndarray:
         '''Find the peaks in the single-sided magnitude spectrum.'''
         self.fft_magnitude = np.abs(self.fft_data)[:len(self.fft_data)//2]
         self.fft_frequencies = self.fft_freqs[:len(self.fft_data)//2]
-        peaks, _ = find_peaks(self.fft_magnitude)
+
+        # Convert desired frequency spacing to index spacing
+        freq_resolution = self.sample_rate / len(self.fft_data)
+        index_distance = int(self.distance / freq_resolution)
+
+        peaks, _ = find_peaks(self.fft_magnitude, distance=index_distance)
+
         sorted_indices = np.argsort(self.fft_magnitude[peaks])[::-1]
         self.peaks = peaks[sorted_indices[:3]]
+
+        return self.peaks
+
+    def get_peaks(self):
+        '''Find the peaks in the single-sided magnitude spectrum within the specified frequency bounds.'''
+        self.fft_magnitude = np.abs(self.fft_data)[:len(self.fft_data)//2]
+        self.fft_frequencies = self.fft_freqs[:len(self.fft_data)//2]
+
+        # Frequency resolution of FFT (Hz per bin)
+        freq_resolution = self.sample_rate / len(self.fft_data)
+        index_distance = int(self.distance / freq_resolution)
+
+        # Apply frequency bounds if not in all-pass mode
+        if self.all_pass_value:
+            freq_mask = np.ones_like(self.fft_frequencies, dtype=bool)
+        else:
+            low = self.low_frequency * 1000  # Convert from kHz to Hz
+            high = self.high_frequency * 1000
+            freq_mask = (self.fft_frequencies >= low) & (self.fft_frequencies <= high)
+
+        # Masked frequency and magnitude arrays
+        masked_magnitude = self.fft_magnitude[freq_mask]
+
+        # We need to know which indices the masked points correspond to in original array
+        masked_indices = np.where(freq_mask)[0]
+
+        # Find peaks in the masked magnitude
+        peaks_local, _ = find_peaks(masked_magnitude, distance=index_distance)
+
+        # Map back to original indices
+        peaks = masked_indices[peaks_local]
+
+        # Sort peaks by amplitude and keep top 3
+        sorted_indices = np.argsort(self.fft_magnitude[peaks])[::-1]
+        self.peaks = peaks[sorted_indices[:3]]
+
         return self.peaks
 
     def plot_wave(self) -> plt.Figure:
@@ -50,7 +92,7 @@ class SignalProcessor:
         wave_ax.plot(self.time_ms, self.normalized_signal)
         wave_ax.grid()
         wave_ax.set_xlabel('Time (ms)', fontsize=13, labelpad=10)
-        wave_ax.set_ylabel('Amplitude (v)', fontsize=13, labelpad=10)
+        wave_ax.set_ylabel('Amplitude', fontsize=13, labelpad=10)
         return wave_fig
 
     def plot_fft_bak(self) -> plt.Figure:
@@ -114,7 +156,7 @@ class SignalProcessor:
         fft_ax.plot(x_axis, y_axis)
         fft_ax.grid()
         fft_ax.set_xlabel('Frequency (Hz)', fontsize=13, labelpad=10)
-        fft_ax.set_ylabel('Amplitude (v)', fontsize=13, labelpad=10)
+        fft_ax.set_ylabel('Amplitude', fontsize=13, labelpad=10)
         return fft_fig
 
 
@@ -201,7 +243,12 @@ class SignalProcessor:
             'sensitivity'
         ))
 
-        self.threshold = self.threshold * 1e6
+        self.distance = float(self.manager.config_manager.get(
+            'SIET1010',
+            'distance'
+        ))
+
+        self.threshold =  1000000 * (6 - self.threshold)
 
         audio, stream = None, None
 
@@ -317,7 +364,7 @@ class Calculator:
         Ff = Ft = 1
         if measurement == 'flexural':
             Ff = float(kwargs.get('flexural_frequency', 0)) * 1000
-        if measurement == 'torsional':
+        elif measurement == 'torsional':
             Ft = float(kwargs.get('torsional_frequency', 0)) * 1000
         else:
             Ft = float(kwargs.get('torsional_frequency', 0)) * 1000
@@ -391,7 +438,7 @@ class Calculator:
         measurement = args['measurement_type']
         if measurement == 'flexural':
             Ff = float(args.get('flexural_frequency', 0)) * 1000
-        if measurement == 'torsional':
+        elif measurement == 'torsional':
             Ft = float(args.get('torsional_frequency', 0)) * 1000
         P = float(args['initial_poisson_ratio'])
 

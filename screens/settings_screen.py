@@ -333,26 +333,26 @@ class AdvancedSettingsScreen(MDScreen):
         self.update_label('sensitivity', self.sensitivity)
         self.ids.sensitivity_slider.value = self.sensitivity
 
+        self.distance = float(self.manager.config_manager.get(
+            'SIET1010',
+            'distance'
+        ))
+        self.update_label('distance', self.distance)
+        self.ids.distance_slider.value = self.distance
+
     def back_to_general(self):
         self.manager.current = 'general_settings'
         self.manager.transition.direction = 'down'
 
     def open_save_dialog(self):
         self.save_dialog = MDDialog(
-            title='Save?',
-            text='These changes cannot be reverted!',
+            title='Done!',
             buttons=[
-                SecondaryButton(
-                    text='CANCEL',
-                    text_color=self.theme_cls.error_color,
-                    theme_text_color='Custom',
-                    on_release=lambda _: self.save_dialog.dismiss()
-                ),
                 SecondaryButton(
                     text='OK',
                     text_color=self.theme_cls.primary_color,
                     theme_text_color='Custom',
-                    on_release=lambda _: self.save()
+                    on_release=lambda _: self.save_dialog.dismiss()
                 )
             ]
         )
@@ -365,14 +365,19 @@ class AdvancedSettingsScreen(MDScreen):
         self.manager.config_manager.set(
             'SIET1010', 'sensitivity', round(self.ids.sensitivity_slider.value, 2)
         )
+        self.manager.config_manager.set(
+            'SIET1010', 'distance', int(self.ids.distance_slider.value)
+        )
         self.manager.config_manager.save()
-        self.save_dialog.dismiss()
+        self.open_save_dialog()
 
     def update_label(self, label, value):
         if label == 'resolution':
             self.ids.resolution_label.text = f'Resolution: {value:.1f} Hz'
         elif label == 'sensitivity':
             self.ids.sensitivity_label.text = f'Sensitivity: ± {value:.1f}'
+        elif label == 'distance':
+            self.ids.distance_label.text = f'Dismiss: {int(value)}'
 
     def update(self):
         # Define your repository details

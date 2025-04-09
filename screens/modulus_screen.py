@@ -32,7 +32,8 @@ class ModulusScreen(MDScreen):
         super().__init__(**kwargs)
 
     def show_main_peak(self):
-        self.ids.main_peak.text = f'Main Peak: {self.manager.app.main_peak:.5f} kHz'
+        main_peak = self.manager.app.main_peak / 1000
+        self.ids.main_peak.text = f'Main Peak: {main_peak:.4f} kHz'
 
     def on_enter(self):
         self.tab = self.ids.tab_container.get_current_tab().title

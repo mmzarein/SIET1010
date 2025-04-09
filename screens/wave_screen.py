@@ -16,7 +16,7 @@ class WaveScreen(MDScreen):
 
     def open_save_dialog(self):
         current_time = datetime.now()
-        file_name = current_time.strftime(f"SIET1010_%Y-%m-%d_%H-%M-%S_WAVE.txt")
+        file_name = current_time.strftime(f"SIET1010_%Y-%m-%d_%H-%M-%S_WAVE.csv")
         self.save_dialog = MDDialog(
             title='File Name:',
             type='custom',

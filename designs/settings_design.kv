@@ -262,7 +262,7 @@
                 size_hint: .8, 1
 
                 MDBoxLayout:
-                    size_hint: 1, .5
+                    size_hint: 1, .33
                     padding: 15
 
                     MDCard:
@@ -299,7 +299,7 @@
                 MDSeparator
 
                 MDBoxLayout:
-                    size_hint: 1, .5
+                    size_hint: 1, .33
                     padding: 15
 
                     MDCard:
@@ -333,6 +333,43 @@
                                 text: 'Max: 5.0'
                                 color: app.VOID_BLACK
                                 halign: 'right'
+
+                MDBoxLayout:
+                    size_hint: 1, .33
+                    padding: 15
+
+                    MDCard:
+                        orientation: 'vertical'
+                        padding: 10
+
+                        MonoLabel:
+                            id: distance_label
+                            size_hint: 1, .6
+                            color: app.VOID_BLACK
+
+                        MDSlider:
+                            id: distance_slider
+                            value: 2.0
+                            size_hint: 1, .2
+                            hint: False
+                            on_value: root.update_label('distance', self.value)
+                            min: 1
+                            max: 300
+                            step: 1
+
+                        MDBoxLayout:
+                            size_hint: 1, .2
+                            padding: 10, 0
+                            MonoLabel:
+                                text: 'Min: 1.0'
+                                color: app.VOID_BLACK
+                                halign: 'left'
+
+                            MonoLabel:
+                                text: 'Max: 5.0'
+                                color: app.VOID_BLACK
+                                halign: 'right'
+
             MDSeparator:
                 orientation: 'vertical'
 
@@ -352,5 +389,5 @@
             left_action: root.back_to_general
             right_icon: 'content-save-cog-outline'
             right_label: 'Save'
-            right_action: root.open_save_dialog
+            right_action: root.save
 
