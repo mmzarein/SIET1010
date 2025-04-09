@@ -346,13 +346,13 @@ class ArchiveScreen(MDScreen):
 
         if num_selected == 1:
             selected_path = os.path.join(self.current_path, selected[0][0])
-            if os.path.isdir(selected_path): self.ids.import_button.disabled = True
-            with open(selected_path, 'r') as f:
-                first_line = f.readline().strip()
-                if first_line == '# WAVEFORM':
-                    self.ids.import_button.disabled = False
-                else:
-                    self.ids.import_button.disabled = True
+            if not os.path.isdir(selected_path):
+                with open(selected_path, 'r') as f:
+                    first_line = f.readline().strip()
+                    if first_line == '# WAVEFORM':
+                        self.ids.import_button.disabled = False
+                    else:
+                        self.ids.import_button.disabled = True
         else:
             self.ids.import_button.disabled = True
 
