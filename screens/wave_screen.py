@@ -47,8 +47,14 @@ class WaveScreen(MDScreen):
     def save(self, name):
         np.savetxt(
             os.path.join(self.manager.default, name),
-            self.manager.app.signal_processor.signal,
-            fmt='%f'
+            np.column_stack((
+                self.manager.app.signal_processor.time_ms,
+                self.manager.app.signal_processor.normalized_signal
+            )),
+            header='Time,Signal',
+            comments='# WAVEFORM\n',
+            delimiter=',',
+            fmt='%.5f' # It might reduce the accuracy!
         )
         self.save_dialog.dismiss()
 

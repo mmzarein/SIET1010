@@ -9,6 +9,7 @@ import time
 import threading
 from types import MethodType
 
+import numpy as np
 from kivy.metrics import dp
 from kivy.clock import Clock
 from kivy.core.window import Window
@@ -343,6 +344,18 @@ class ArchiveScreen(MDScreen):
         selected = self.table.get_row_checks()
         num_selected = len(selected)
 
+        if num_selected == 1:
+            selected_path = os.path.join(self.current_path, selected[0][0])
+            if os.path.isdir(selected_path): self.ids.import_button.disabled = True
+            with open(selected_path, 'r') as f:
+                first_line = f.readline().strip()
+                if first_line == '# WAVEFORM':
+                    self.ids.import_button.disabled = False
+                else:
+                    self.ids.import_button.disabled = True
+        else:
+            self.ids.import_button.disabled = True
+
 
         if num_selected == 1:
             selected_path = os.path.join(self.current_path, selected[0][0])
@@ -575,4 +588,57 @@ class ArchiveScreen(MDScreen):
     def cancel_copy(self):
         self.cancel_flag = True
         self.progress_dialog.dismiss()
+
+    def import_wave(self):
+
+        selected_rows = self.table.get_row_checks()
+        if not selected_rows or len(selected_rows) != 1:
+            return
+
+        file_name = selected_rows[0][0]
+        file_path = os.path.join(self.current_path, file_name)
+
+        with open(file_path, 'r') as file:
+            signature = file.readline().strip()
+
+        if not signature == '# WAVEFORM': return # TODO: Show Error Dialog!
+
+        self.manager.app.signal_processor.all_pass_value = self.manager.config_manager.getboolean(
+            'SIET1010',
+            'all_pass'
+        )
+
+        self.manager.app.signal_processor.low_frequency = float(self.manager.config_manager.get(
+            'SIET1010',
+            'low_frequency'
+        ))
+
+        self.manager.app.signal_processor.high_frequency = float(self.manager.config_manager.get(
+            'SIET1010',
+            'high_frequency'
+        ))
+
+        time_ms, normalized_signal = np.loadtxt(
+            file_path,
+            delimiter=',',
+            skiprows=2,
+            unpack=True
+        )
+
+        self.manager.app.signal_processor.normalized_signal = normalized_signal
+        self.manager.app.signal_processor.time_ms = time_ms
+
+        (
+            self.manager.app.signal_processor.fft_data,
+            self.manager.app.signal_processor.fft_freqs
+        ) = self.manager.app.signal_processor.calculate_fft(normalized_signal, importing=True)
+
+
+        peaks = self.manager.app.signal_processor.get_peaks()
+        peaks = self.manager.app.signal_processor.fft_frequencies[peaks]
+
+        self.manager.app.update_ui(False, normalized_signal, peaks, True)
+
+        self.manager.current = 'home'
+        self.manager.transition.direction = 'left'
 

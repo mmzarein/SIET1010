@@ -27,8 +27,9 @@ class SignalProcessor:
         self.single_side_magnitude[1:-1] *= 2
         return self.fft_result, self.single_side_magnitude
 
-    def calculate_fft(self, post_data):
-        self.home_screen.ids.state_label.text = 'Calculating'
+    def calculate_fft(self, post_data, importing=False):
+        if not importing:
+            self.home_screen.ids.state_label.text = 'Calculating'
         fft_data = np.fft.fft(post_data)
         self.fft_result = fft_data
         fft_freqs = np.fft.fftfreq(len(fft_data), 1/self.sample_rate)
@@ -38,7 +39,7 @@ class SignalProcessor:
         '''Find the peaks in the single-sided magnitude spectrum.'''
         self.fft_magnitude = np.abs(self.fft_data)[:len(self.fft_data)//2]
         self.fft_frequencies = self.fft_freqs[:len(self.fft_data)//2]
-        peaks, _ = find_peaks(self.fft_magnitude, distance=100)
+        peaks, _ = find_peaks(self.fft_magnitude)
         sorted_indices = np.argsort(self.fft_magnitude[peaks])[::-1]
         self.peaks = peaks[sorted_indices[:3]]
         return self.peaks
@@ -232,7 +233,7 @@ class SignalProcessor:
             return False
 
         # Calculating FFT
-        self.fft_data, self.fft_freqs = self.calculate_fft(post_trigger)
+        self.fft_data, self.fft_freqs = self.calculate_fft(self.normalized_signal)
 
         if stop.is_set():
             print('Stop detected! Exiting...')

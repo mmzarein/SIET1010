@@ -50,15 +50,23 @@
 
                 PrimaryButton:
                     id: new_folder_button
-                    size_hint: 1, .16
+                    size_hint: 1, .14
                     text: 'New Folder'
                     icon: 'folder-plus'
                     font_size: 21
                     on_release: root.show_create_directory_dialog()
 
                 PrimaryButton:
+                    id: import_button
+                    size_hint: 1, .14
+                    text: 'Import'
+                    icon: 'open-in-new'
+                    font_size: 21
+                    on_release: root.import_wave()
+
+                PrimaryButton:
                     id: rename_button
-                    size_hint: 1, .16
+                    size_hint: 1, .14
                     text: 'Rename'
                     icon: 'pencil'
                     font_size: 21
@@ -66,7 +74,7 @@
 
                 PrimaryButton:
                     id: set_default_button
-                    size_hint: 1, .16
+                    size_hint: 1, .14
                     text: 'Set Default'
                     icon: 'star'
                     font_size: 21
@@ -74,7 +82,7 @@
 
                 PrimaryButton:
                     id: delete_button
-                    size_hint: 1, .16
+                    size_hint: 1, .14
                     text: 'Delete'
                     icon: 'delete'
                     font_size: 21
@@ -84,7 +92,7 @@
 
                 PrimaryButton:
                     id: select_all_button
-                    size_hint: 1, .16
+                    size_hint: 1, .14
                     text: 'Select All'
                     icon: 'select'
                     font_size: 21
@@ -92,7 +100,7 @@
 
                 PrimaryButton:
                     id: deselect_all_button
-                    size_hint: 1, .15
+                    size_hint: 1, .14
                     text: 'Deselect All'
                     icon: 'select-off'
                     font_size: 21

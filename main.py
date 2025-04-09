@@ -240,12 +240,17 @@ class Main(MDApp):
         )
         self._recording_thread.start()
 
-    def update_ui(self, success, signal, peaks):
+    def update_ui(self, success, signal, peaks, importing=False):
         self.main_peak = peaks[0]
         home_screen = self.root.get_screen('home')
+        if importing:
+            home_screen.calculation_btn.disabled = False
+            home_screen.show_fft_btn.disabled = False
+            home_screen.show_wave_btn.disabled = False
         if len(signal) > 0 and len(peaks) > 0:
             home_screen.set_peaks(peaks)
-        home_screen.start_stop(success)
+        if not importing:
+            home_screen.start_stop(success)
 
     def build(self):
         manager = Navigator(self)
