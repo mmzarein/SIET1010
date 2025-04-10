@@ -137,11 +137,11 @@ class GeneralSettingsScreen(MDScreen):
 
     def update_label(self, label, value):
         if label == 'low_freq_label':
-            self.ids.low_freq_label.text = f'Low Frequency: {int(value)} kHz'
+            self.ids.low_freq_label.text = f'Low Frequency: {value:.2f} kHz'
             self.ids.high_freq.min = value + 1
             self.ids.high_freq_min.text = f'Min: {int(value) + 1} kHz'
         else:
-            self.ids.high_freq_label.text = f'High Frequency: {int(value)} kHz'
+            self.ids.high_freq_label.text = f'High Frequency: {value:.2f} kHz'
             self.ids.low_freq.max = value - 1
             self.ids.low_freq_max.text = f'Max: {int(value) - 1} kHz'
 

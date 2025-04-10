@@ -160,20 +160,21 @@
                                 id: low_freq_label
                                 size_hint: 1, .6
                                 color: app.VOID_BLACK
+                                font_size: 22
 
                             MDSlider:
                                 id: low_freq
                                 on_value: root.update_label('low_freq_label', self.value)
                                 size_hint: 1, .2
                                 hint: False
-                                min: 0
-                                step: 1
+                                min: .02
+                                step: .02
 
                             MDBoxLayout:
                                 size_hint: 1, .2
                                 padding: 10, 0
                                 MonoLabel:
-                                    text: 'Min: 0 kHz'
+                                    text: 'Min: 0.02 kHz'
                                     font_size: 20
                                     color: app.VOID_BLACK
                                     halign: 'left'
@@ -192,6 +193,7 @@
                                 id: high_freq_label
                                 size_hint: 1, .6
                                 color: app.VOID_BLACK
+                                font_size: 22
 
                             MDSlider:
                                 id: high_freq
@@ -199,7 +201,7 @@
                                 size_hint: 1, .2
                                 hint: False
                                 max: 24
-                                step: 1
+                                step: .02
 
                             MDBoxLayout:
                                 size_hint: 1, .2

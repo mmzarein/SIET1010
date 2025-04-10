@@ -132,7 +132,7 @@ class SignalProcessor:
 
         # Determine frequency bounds
         if self.all_pass_value:
-            low_bound = 1000     # 1 kHz
+            low_bound = 20
             high_bound = 24000   # 24 kHz
         else:
             low_bound = self.low_frequency * 1000
