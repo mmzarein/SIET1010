@@ -54,6 +54,7 @@ class Updater:
 
     def _clone_or_pull_repo(self):
         self.update_dialog.text = 'Pulling from GitHub!'
+        os.system('git stash')
         os.system('git pull')
 
     def _install_dependencies(self):
