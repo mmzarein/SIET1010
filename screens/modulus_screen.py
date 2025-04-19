@@ -1,14 +1,17 @@
 import json
 import os
+import numpy as np
 from datetime import datetime
+import matplotlib.pyplot as plt
 from kivymd.app import MDApp
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.tab.tab import MDTabsBase, MDTabs
 from kivymd.uix.floatlayout import MDFloatLayout
-from kivy.properties import StringProperty, ObjectProperty
+from kivy.properties import StringProperty, ObjectProperty, NumericProperty
 from kivymd.uix.button import MDFlatButton
 from kivymd.uix.textfield import MDTextField
 from kivymd.uix.dialog import MDDialog
+from scipy.signal import find_peaks
 
 
 class Tab(MDFloatLayout, MDTabsBase):
@@ -27,6 +30,7 @@ class TabContainer(MDTabs):
 class ModulusScreen(MDScreen):
     bar_choice = StringProperty('')
     rod_choice = StringProperty('')
+    peak_choice = NumericProperty(-1)
 
     def __ini__(self, **kwargs):
         super().__init__(**kwargs)
@@ -39,6 +43,25 @@ class ModulusScreen(MDScreen):
         self.tab = self.ids.tab_container.get_current_tab().title
         self.show_main_peak()
         self.update_calculation_button_status()
+        self.empty_damping_plot()
+
+        if hasattr(self.ids.df.ids, 'unit_label') and self.ids.df.ids.unit_label.parent:
+            self.ids.df.ids.unit_label.parent.remove_widget(self.ids.df.ids.unit_label)
+            self.ids.df.ids.label_field.size_hint = (.5, None)
+            self.ids.df.ids.title_label.size_hint = (.5, None)
+
+        if hasattr(self.ids.quality_factor.ids, 'unit_label') and self.ids.quality_factor.ids.unit_label.parent:
+            self.ids.quality_factor.ids.unit_label.parent.remove_widget(self.ids.quality_factor.ids.unit_label)
+            self.ids.quality_factor.ids.label_field.size_hint = (.5, None)
+            self.ids.quality_factor.ids.title_label.size_hint = (.5, None)
+
+    def empty_damping_plot(self):
+        fig, ax = plt.subplots(layout='constrained')
+        ax.grid()
+        ax.set_xlabel('Frequency (Hz)')
+        ax.set_ylabel('Amplitude')
+        # ax.set_title('Frequency Spectrum with Damping Measurement')
+        self.ids.damping_plot.figure = fig
 
     def change_bar_choice(self):
         bar_choices = {
@@ -70,6 +93,22 @@ class ModulusScreen(MDScreen):
 
         self.update_calculation_button_status()
 
+    def change_peak_choice(self):
+        peak_choices = {
+            'first_peak_choice': 0,
+            'second_peak_choice': 1,
+            'third_peak_choice': 2
+        }
+
+        self.peak_choice = next(
+            (value for key, value in peak_choices.items()
+             if getattr(self.ids, key).state == 'down'),
+             -1
+        )
+
+        self.update_calculation_button_status()
+
+
     def open_save_dialog(self):
         current_time = datetime.now()
 
@@ -79,6 +118,8 @@ class ModulusScreen(MDScreen):
             file_name = current_time.strftime(f"SIET1010_%Y-%m-%d_%H-%M-%S_ROD.json")
         elif self.tab == 'DISC':
             file_name = current_time.strftime(f"SIET1010_%Y-%m-%d_%H-%M-%S_DISC.json")
+        elif self.tab == 'DF':
+            file_name = current_time.strftime(f"SIET1010_%Y-%m-%d_%H-%M-%S_DF.json")
 
         self.save_dialog = MDDialog(
             title='File Name:',
@@ -165,6 +206,23 @@ class ModulusScreen(MDScreen):
             with open(os.path.join(self.manager.default, name), 'w') as f:
                 json.dump({'Inputs': inputs, 'Outputs': outputs}, f, indent=4)
 
+        elif self.tab == 'DF':
+            inputs = {
+                'peak': self.peak_choice
+            }
+
+            outputs = {
+                'f0': self.ids.f0_output.ids.label_field.text,
+                'f1': self.ids.f1_output.ids.label_field.text,
+                'f2': self.ids.f2_output.ids.label_field.text,
+                'Bandwidth': self.ids.delta_f.ids.label_field.text,
+                'Quality Factor': self.ids.quality_factor.ids.label_field.text,
+                'Damping Factor': self.ids.df.ids.label_field.text
+            }
+
+            with open(os.path.join(self.manager.default, name), 'w') as f:
+                json.dump({'Inputs': inputs, 'Outputs': outputs}, f, indent=4)
+
         self.save_dialog.dismiss()
 
     def reset(self):
@@ -237,6 +295,24 @@ class ModulusScreen(MDScreen):
             ]:
                 field.text = ''
 
+        elif self.tab == 'DF':
+            for btn in [
+                self.ids.first_peak_choice,
+                self.ids.second_peak_choice,
+                self.ids.third_peak_choice
+            ]:
+                btn.state = 'normal'
+            for field in [
+                self.ids.f0_output.ids.label_field,
+                self.ids.f1_output.ids.label_field,
+                self.ids.f2_output.ids.label_field,
+                self.ids.delta_f.ids.label_field,
+                self.ids.quality_factor.ids.label_field,
+                self.ids.df.ids.label_field,
+            ]:
+                field.text = ''
+
+            self.empty_damping_plot()
 
         self.update_calculation_button_status()
 
@@ -333,8 +409,29 @@ class ModulusScreen(MDScreen):
             calculate_button.disabled = not all(fields)
             reset_button.disabled = not any(fields)
 
-            self.ids.modulus_panel.ids.right_button.disabled = not any(
-                output_fields)
+            self.ids.modulus_panel.ids.right_button.disabled = not any(output_fields)
+
+        elif self.tab == 'DF':
+            calculate_button = self.ids.df_calculation_btn
+            reset_button = self.ids.df_reset_btn
+
+            fields = [
+                bool(self.peak_choice != -1)
+            ]
+
+            output_fields = [
+                bool(self.ids.f0_output.ids.label_field.text),
+                bool(self.ids.f1_output.ids.label_field.text),
+                bool(self.ids.f2_output.ids.label_field.text),
+                bool(self.ids.delta_f.ids.label_field.text),
+                bool(self.ids.quality_factor.ids.label_field.text),
+                bool(self.ids.df.ids.label_field.text)
+            ]
+
+            calculate_button.disabled = not all(fields)
+            reset_button.disabled = not any(fields)
+
+            self.ids.modulus_panel.ids.right_button.disabled = not any(output_fields)
 
     def bar_calculation(self):
         inputs = {
@@ -438,6 +535,130 @@ class ModulusScreen(MDScreen):
         self.ids.disc_young_modulus_output.ids.label_field.text = result['dynamic_young_modulus_output']
         self.ids.disc_shear_modulus_output.ids.label_field.text = result['dynamic_shear_modulus_output']
         self.ids.disc_poisson_ratio_output.ids.label_field.text = result['poisson_ratio_output']
+
+        self.update_calculation_button_status()
+
+    def damping_factor(self):
+
+        self.all_pass_value = self.manager.config_manager.getboolean(
+            'SIET1010',
+            'all_pass'
+        )
+
+        self.low_frequency = float(self.manager.config_manager.get(
+            'SIET1010',
+            'low_frequency'
+        ))
+
+        self.high_frequency = float(self.manager.config_manager.get(
+            'SIET1010',
+            'high_frequency'
+        ))
+
+        self.resolution = self.manager.config_manager.get(
+            'SIET1010',
+            'resolution'
+        )
+
+        self.threshold = float(self.manager.config_manager.get(
+            'SIET1010',
+            'sensitivity'
+        ))
+
+        self.distance = float(self.manager.config_manager.get(
+            'SIET1010',
+            'distance'
+        ))
+
+        data = self.manager.app.signal_processor.normalized_signal
+
+        # f_lower = 20       # Hz
+        # f_upper = 24000    # Hz
+        if self.all_pass_value:
+            f_lower = 20
+            f_upper = 24000   # 24 kHz
+        else:
+            f_lower = self.low_frequency * 1000
+            f_upper = self.high_frequency * 1000
+
+        Distance = self.distance
+
+        a = self.peak_choice + 1
+
+        Fs = 196000
+
+        data = data / np.max(np.abs(data))
+        N = len(data)
+        t = np.arange(N) / Fs
+
+        f = np.fft.fftfreq(N, d=1/Fs)[:N//2]
+        fft_data = np.abs(np.fft.fft(data))[:N//2]
+
+        fft_data = fft_data.round(3) # By me!
+
+        mask = (f >= f_lower) & (f <= f_upper)
+        f_filtered = f[mask]
+        fft_data_filtered = fft_data[mask]
+
+        fft_data_filtered /= np.max(fft_data_filtered)
+
+        Dist = int(Distance / (Fs / N))
+
+        peaks, _ = find_peaks(fft_data_filtered, distance=Dist)
+
+        sorted_indices = np.argsort(fft_data_filtered[peaks])[::-1]
+        top_indices = peaks[sorted_indices[:min(3, len(peaks))]]
+        top_peaks = fft_data_filtered[top_indices]
+
+        a_index = a - 1
+        f0 = f_filtered[top_indices[a_index]]
+        peak_amp = top_peaks[a_index]
+        half_power = peak_amp / np.sqrt(2)
+
+        left_side = fft_data_filtered[:top_indices[a_index]]
+        left_cross = np.where(left_side <= half_power)[0]
+        left_cross = left_cross[-1] if left_cross.size > 0 else 0
+        f1 = f_filtered[left_cross]
+
+        right_side = fft_data_filtered[top_indices[a_index]:]
+
+        right_cross = np.where(right_side <= half_power)[0]
+        right_cross = (right_cross[0] + top_indices[a_index]) if right_cross.size > 0 else len(f_filtered) - 1
+        f2 = f_filtered[right_cross]
+
+        delta_f = f2 - f1
+        damping_ratio = delta_f / (2 * f0)
+        quality_factor = 1 / (2 * damping_ratio)
+
+        fig, ax = plt.subplots(layout='tight')
+
+        ax.plot(f_filtered, fft_data_filtered, 'r', linewidth=1.5)
+        ax.axvline(x=f0, color='k', linestyle='--', label='Resonance')
+        ax.axvline(x=f1, color='g', linestyle='--', label='Half-power')
+        ax.axvline(x=f2, color='g', linestyle='--')
+        ax.axhline(y=half_power, xmin=0, xmax=1, color='b', linestyle='--', label='Half-power level')  # xmin/xmax are in 0-1 scale
+        # ax.hlines(y=half_power, xmin=f_filtered[0], xmax=f_filtered[-1], color='b', linestyle='--', label='Half-power level')
+
+        ax.set_xlabel('Frequency (Hz)')
+        ax.set_ylabel('Amplitude')
+        # ax.set_title(f'Frequency Spectrum with Damping Measurement (ζ = {damping_ratio:.8f})')
+        ax.grid(True)
+        ax.legend()
+        ax.set_xlim([f1 - 2 * delta_f, f2 + 2 * delta_f])
+
+        self.ids.damping_plot.figure = fig
+
+        # print(f'Resonance Frequency (f0): {f0:.2f} Hz')
+        self.ids.f0_output.ids.label_field.text = f'{f0:.2f}'
+        # print(f'Half-Power Frequencies: {f1:.2f} Hz and {f2:.2f} Hz')
+        self.ids.f1_output.ids.label_field.text = f'{f1:.2f}'
+        self.ids.f2_output.ids.label_field.text = f'{f2:.2f}'
+        # print(f'Bandwidth (Δf): {delta_f:.2f} Hz')
+        self.ids.delta_f.ids.label_field.text = f'{delta_f:.2f}'
+        # print(f'Damping Ratio (ζ): {damping_ratio:.8f}')
+        self.ids.df.ids.label_field.text = f'{damping_ratio:.8f}'
+        # print(f'Quality Factor (Q): {quality_factor:.2f}')
+        self.ids.quality_factor.ids.label_field.text = f'{quality_factor:.2f}'
 
         self.update_calculation_button_status()
 

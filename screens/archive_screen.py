@@ -639,6 +639,11 @@ class ArchiveScreen(MDScreen):
             'high_frequency'
         ))
 
+        self.manager.app.signal_processor.distance = float(self.manager.config_manager.get(
+            'SIET1010',
+            'distance'
+        ))
+
         time_ms, normalized_signal = np.loadtxt(
             file_path,
             delimiter=',',

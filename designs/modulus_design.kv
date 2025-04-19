@@ -508,6 +508,150 @@
                                     icon: 'function'
                                     on_release: root.disc_calculation()
 
+                Tab:
+                    title: 'DF'
+                    icon: 'sine-wave'
+
+                    MDBoxLayout:
+
+                        MDBoxLayout:
+                            size_hint: .6, 1
+                            orientation: 'vertical'
+
+                            MDLabel:
+                                text: 'Input Panel'
+                                size_hint: 1, None
+                                height: 35
+                                padding: 15, 0
+                                md_bg_color: app.SKY_MIST
+
+                            MDBoxLayout:
+                                size_hint: 1, 1
+                                orientation: 'vertical'
+
+
+                                MDBoxLayout:
+                                    size_hint: 1, .2
+                                    padding: 8
+                                    spacing: 8
+
+                                    ChoiceButton:
+                                        id: first_peak_choice
+                                        text: 'First Peak'
+                                        group: 'measurement_type'
+                                        icon: 'checkbox-marked-circle-outline' if self.state == 'down' else 'circle-outline'
+                                        on_release: root.change_peak_choice()
+
+                                    ChoiceButton:
+                                        id: second_peak_choice
+                                        text: 'Second Peak'
+                                        group: 'measurement_type'
+                                        icon: 'checkbox-marked-circle-outline' if self.state == 'down' else 'circle-outline'
+                                        on_release: root.change_peak_choice()
+
+                                    ChoiceButton:
+                                        id: third_peak_choice
+                                        text: 'Third Peak'
+                                        group: 'measurement_type'
+                                        icon: 'checkbox-marked-circle-outline' if self.state == 'down' else 'circle-outline'
+                                        on_release: root.change_peak_choice()
+
+                                MDSeparator
+
+                                MDBoxLayout:
+                                    size_hint: 1, .8
+                                    padding: 8
+
+                                    MDCard:
+                                        size_hint: 1, 1
+                                        padding: 5
+
+                                        MatplotFigure:
+                                            id: damping_plot
+                                            size_hint: 1, 1
+
+                        MDSeparator:
+                            orientation: 'vertical'
+
+                        MDBoxLayout:
+                            size_hint: .4, 1
+                            orientation: 'vertical'
+
+                            MDLabel:
+                                text: 'Output Panel'
+                                size_hint: 1, None
+                                height: 35
+                                padding: 15, 0
+                                md_bg_color: app.SKY_MIST
+
+                            MDBoxLayout:
+                                size_hint: 1, 1
+                                orientation: 'vertical'
+
+                                MDBoxLayout:
+                                    size_hint: 1, .8
+                                    orientation: 'vertical'
+                                    padding: 8
+
+                                    EntryBox:
+                                        id: f0_output
+                                        label: 'Resonance Frequency : f0 ='
+                                        unit: 'Hz'
+                                        is_output: True
+
+                                    EntryBox:
+                                        id: f1_output
+                                        label: 'Half-Power Frequencies : f1 ='
+                                        unit: 'Hz'
+                                        is_output: True
+
+                                    EntryBox:
+                                        id: f2_output
+                                        label: 'f2 ='
+                                        unit: 'Hz'
+                                        is_output: True
+
+                                    EntryBox:
+                                        id: delta_f
+                                        label: 'Bandwidth : Δf ='
+                                        unit: 'Hz'
+                                        is_output: True
+
+                                    EntryBox:
+                                        id: quality_factor
+                                        label: 'Quality Factor : Q ='
+                                        unit: ''
+                                        is_output: True
+
+                                    EntryBox:
+                                        id: df
+                                        label: 'Damping Factor : ζ ='
+                                        unit: ''
+                                        is_output: True
+
+                                MDSeparator
+
+                                MDBoxLayout:
+                                    size_hint: 1, .2
+                                    padding: 8
+                                    spacing: 8
+
+                                    PrimaryButton:
+                                        id: df_reset_btn
+                                        size_hint: .5, 1
+                                        text: 'Reset'
+                                        icon: 'cached'
+                                        on_release: root.reset()
+                                        disabled: True
+
+                                    PrimaryButton:
+                                        id: df_calculation_btn
+                                        size_hint: .5, 1
+                                        text: 'Calculate'
+                                        icon: 'function'
+                                        on_release: root.damping_factor()
+                                        disabled: True
+
         Panel:
             id: modulus_panel
             left_icon: 'arrow-left'
