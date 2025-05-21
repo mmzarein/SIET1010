@@ -378,6 +378,17 @@
             MDBoxLayout:
                 size_hint: .2, 1
                 padding: 10
+                spacing: 10
+                orientation: 'vertical'
+
+                MDBoxLayout:
+                    size_hint: 1, .7
+
+                PrimaryButton:
+                    size_hint: 1, .15
+                    text: 'Default'
+                    icon: 'cog-sync'
+                    on_release: root.default()
 
                 PrimaryButton:
                     size_hint: 1, .15

@@ -396,3 +396,26 @@ class AdvancedSettingsScreen(MDScreen):
 
         updater.update()
 
+
+    def default(self):
+        self.manager.config_manager.set(
+            'SIET1010', 'resolution', 2.5
+        )
+        self.manager.config_manager.set(
+            'SIET1010', 'sensitivity', 1.5
+        )
+        self.manager.config_manager.set(
+            'SIET1010', 'distance', 80
+        )
+        self.manager.config_manager.set(
+            'SIET1010', 'all_pass', True
+        )
+        self.manager.config_manager.set(
+            'SIET1010', 'low_frequency', 2.0
+        )
+        self.manager.config_manager.set(
+            'SIET1010', 'high_frequency', 10.0
+        )
+        self.manager.config_manager.save()
+        self.on_enter()
+
