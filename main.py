@@ -110,7 +110,7 @@ class LabelField(MDTextField):
 
     def on_touch_down(self, touch):
         if not self.collide_point(*touch.pos): return
-        if isinstance(touch, MouseMotionEvent): return
+        # if isinstance(touch, MouseMotionEvent): return
         if self.is_output: return
         self.prompt = Prompt(
             title=self.dialog_title,
@@ -136,6 +136,53 @@ class EntryBox(MDBoxLayout):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+    def on_touch_down(self, touch):
+        if not self.collide_point(*touch.pos): return
+        if self.is_output: return
+        screen_name = manager.current
+        screen = manager.get_screen(screen_name)
+
+        if screen_name == 'modulus':
+
+            clavius = manager.get_screen('clavius')
+
+            clavius.active_tab = self.label[:-2]
+
+            tab = screen.ids.tab_container.get_current_tab().title
+
+            clavius.fields = []
+
+            if tab == 'BAR':
+                clavius.fields = [
+                    (screen.ids.bar_length, screen.ids.bar_length.ids.label_field.text),
+                    (screen.ids.bar_width, screen.ids.bar_width.ids.label_field.text),
+                    (screen.ids.bar_thickness, screen.ids.bar_thickness.ids.label_field.text),
+                    (screen.ids.bar_mass, screen.ids.bar_mass.ids.label_field.text),
+                    (screen.ids.bar_flexural_frequency, screen.ids.bar_flexural_frequency.ids.label_field.text),
+                    (screen.ids.bar_torsional_frequency, screen.ids.bar_torsional_frequency.ids.label_field.text),
+                    (screen.ids.bar_initial_poisson_ratio, screen.ids.bar_initial_poisson_ratio.ids.label_field.text),
+                ]
+            elif tab == 'ROD':
+                clavius.fields = [
+                    (screen.ids.rod_length, screen.ids.rod_length.ids.label_field.text),
+                    (screen.ids.rod_diameter, screen.ids.rod_diameter.ids.label_field.text),
+                    (screen.ids.rod_mass, screen.ids.rod_mass.ids.label_field.text),
+                    (screen.ids.rod_flexural_frequency, screen.ids.rod_flexural_frequency.ids.label_field.text),
+                    (screen.ids.rod_torsional_frequency, screen.ids.rod_torsional_frequency.ids.label_field.text),
+                    (screen.ids.rod_initial_poisson_ratio, screen.ids.rod_initial_poisson_ratio.ids.label_field.text),
+                ]
+            elif tab == 'DISC':
+                clavius.fields = [
+                    (screen.ids.disc_diameter, screen.ids.disc_diameter.ids.label_field.text),
+                    (screen.ids.disc_thickness, screen.ids.disc_thickness.ids.label_field.text),
+                    (screen.ids.disc_mass, screen.ids.disc_mass.ids.label_field.text),
+                    (screen.ids.disc_first_frequency, screen.ids.disc_first_frequency.ids.label_field.text),
+                    (screen.ids.disc_second_frequency, screen.ids.disc_second_frequency.ids.label_field.text),
+                ]
+
+            manager.current = 'clavius'
+            manager.transition.direction = 'down'
 
 
 class ConfigManager:
@@ -204,7 +251,10 @@ class Navigator(MDScreenManager):
             'SIET1010', 'archive_path', fallback='Archive/SIET1010'
         )
 
-    def on_touch_down(self, touch):
+
+        # self.current = 'clavius'
+
+    def on_touch_down_bak(self, touch):
         if self.collide_point(*touch.pos):
             if not isinstance(touch, MouseMotionEvent):
                 super().on_touch_down(touch)
@@ -253,6 +303,7 @@ class Main(MDApp):
             home_screen.start_stop(success)
 
     def build(self):
+        global manager
         manager = Navigator(self)
         VKeyboard.layout_path = 'keyboards'
         VKeyboard.layout = 'minimal'

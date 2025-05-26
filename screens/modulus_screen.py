@@ -70,6 +70,21 @@ class ModulusScreen(MDScreen):
 
         self.update_calculation_button_status()
 
+    def change_peak_choice(self):
+        peak_choices = {
+            'first_peak_choice': 0,
+            'second_peak_choice': 1,
+            'third_peak_choice': 2
+        }
+
+        self.peak_choice = next(
+            (value for key, value in peak_choices.items()
+             if getattr(self.ids, key).state == 'down'),
+             -1
+        )
+
+        self.update_calculation_button_status()
+
     def open_save_dialog(self):
         current_time = datetime.now()
 
@@ -351,11 +366,41 @@ class ModulusScreen(MDScreen):
         length = float(inputs['length'])
         width = float(inputs['width'])
         thickness = float(inputs['thickness'])
+        mass = float(inputs['mass'])
+        initial_poisson_ratio = float(inputs['initial_poisson_ratio'])
+        flexural_frequency = float(inputs['flexural_frequency'])
+        torsional_frequency = float(inputs['torsional_frequency'])
+
+        errors = []
 
         if not (length >= width >= thickness):
+            errors.append('- Length must be ≥ Width ≥ Thickness.')
+
+        if not (0 < length <= 10000):
+            errors.append('- Length must be between 0 and 10000.')
+
+        if not (0 < width <= 2000):
+            errors.append('- Width must be between 0 and 2000.')
+
+        if not (0 < thickness <= 1000):
+            errors.append('- Thickness must be between 0 and 1000.')
+
+        if not (0 < mass <= 20000):
+            errors.append('- Mass must be between 0 and 20000.')
+
+        if not (0 < initial_poisson_ratio < 1):
+            errors.append('- Poisson ratio must be between 0 and 1.')
+
+        if not (0 < flexural_frequency < 24):
+            errors.append('- Flexural frequency must be between 0 and 24.')
+
+        if not (0 < torsional_frequency < 24):
+            errors.append('- Torsional frequency must be between 0 and 24.')
+
+        if errors:
             self.bar_error_dialog = MDDialog(
-                title='Invalid dimensions!',
-                text='Make sure: Length >= Width >= Thickness',
+                title='Invalid Inputs!',
+                text='\n'.join(errors),
                 buttons=[
                     MDFlatButton(
                         text='OK',
@@ -386,11 +431,38 @@ class ModulusScreen(MDScreen):
 
         length = float(inputs['length'])
         diameter = float(inputs['diameter'])
+        mass = float(inputs['mass'])
+        initial_poisson_ratio = float(inputs['initial_poisson_ratio'])
+        flexural_frequency = float(inputs['flexural_frequency'])
+        torsional_frequency = float(inputs['torsional_frequency'])
+
+        errors = []
 
         if not (length >= diameter):
+            errors.append('- Length must be ≥ diameter.')
+
+        if not (0 < length <= 10000):
+            errors.append('- Length must be between 0 and 10000.')
+
+        if not (0 < diameter <= 2000):
+            errors.append('- Length must be between 0 and 2000.')
+
+        if not (0 < mass <= 20000):
+            errors.append('- Length must be between 0 and 20000.')
+
+        if not (0 < initial_poisson_ratio < 1):
+            errors.append('- Poisson ratio must be between 0 and 1.')
+
+        if not (0 < flexural_frequency < 24):
+            errors.append('- Flexural frequency must be between 0 and 24.')
+
+        if not (0 < torsional_frequency < 24):
+            errors.append('- Torsional frequency must be between 0 and 24.')
+
+        if errors:
             self.rod_error_dialog = MDDialog(
-                title='Invalid dimensions!',
-                text='Make sure: Length >= Diameter',
+                title='Invalid Inputs!',
+                text='\n'.join(errors),
                 buttons=[
                     MDFlatButton(
                         text='OK',
@@ -408,6 +480,7 @@ class ModulusScreen(MDScreen):
 
         self.update_calculation_button_status()
 
+
     def disc_calculation(self):
         inputs = {
             'diameter': self.ids.disc_diameter.ids.label_field.text,
@@ -419,25 +492,172 @@ class ModulusScreen(MDScreen):
 
         diameter = float(inputs['diameter'])
         thickness = float(inputs['thickness'])
+        mass = float(inputs['mass'])
+        first_frequency = float(inputs['first_frequency'])
+        second_frequency = float(inputs['second_frequency'])
+
+        errors = []
 
         if not (diameter >= thickness):
-            self.rod_error_dialog = MDDialog(
-                title='Invalid dimensions!',
-                text='Make sure: Diameter >= Thickness',
+            errors.append('- Diameter must be ≥ Thickness.')
+
+        if not (0 < diameter <= 2000):
+            errors.append('- Length must be between 0 and 2000.')
+
+        if not (0 < mass <= 20000):
+            errors.append('- Length must be between 0 and 20000.')
+
+        if not (0 < thickness <= 1000):
+            errors.append('- Thickness must be between 0 and 1000.')
+
+        if not (0 < first_frequency < 24):
+            errors.append('- First frequency must be between 0 and 24.')
+
+        if not (0 < second_frequency < 24):
+            errors.append('- Second frequency must be between 0 and 24.')
+
+
+        if errors:
+            self.disc_error_dialog = MDDialog(
+                title='Invalid Inputs!',
+                text='\n'.join(errors),
                 buttons=[
                     MDFlatButton(
                         text='OK',
-                        on_release=lambda _: self.rod_error_dialog.dismiss()
+                        on_release=lambda _: self.disc_error_dialog.dismiss()
                     )
                 ]
             )
-            self.rod_error_dialog.open()
+            self.disc_error_dialog.open()
             return
 
         result = self.manager.calculator.disc(**inputs)
         self.ids.disc_young_modulus_output.ids.label_field.text = result['dynamic_young_modulus_output']
         self.ids.disc_shear_modulus_output.ids.label_field.text = result['dynamic_shear_modulus_output']
         self.ids.disc_poisson_ratio_output.ids.label_field.text = result['poisson_ratio_output']
+
+        self.update_calculation_button_status()
+
+    def damping_factor(self):
+        self.all_pass_value = self.manager.config_manager.getboolean(
+            'SIET1010',
+            'all_pass'
+        )
+
+        self.low_frequency = float(self.manager.config_manager.get(
+            'SIET1010',
+            'low_frequency'
+        ))
+
+        self.high_frequency = float(self.manager.config_manager.get(
+            'SIET1010',
+            'high_frequency'
+        ))
+
+        self.resolution = self.manager.config_manager.get(
+            'SIET1010',
+            'resolution'
+        )
+
+        self.threshold = float(self.manager.config_manager.get(
+            'SIET1010',
+            'sensitivity'
+        ))
+
+        self.distance = float(self.manager.config_manager.get(
+            'SIET1010',
+            'distance'
+        ))
+
+        data = self.manager.app.signal_processor.normalized_signal
+
+        # f_lower = 20       # Hz
+        # f_upper = 24000    # Hz
+        if self.all_pass_value:
+            f_lower = 20
+            f_upper = 24000   # 24 kHz
+        else:
+            f_lower = self.low_frequency * 1000
+            f_upper = self.high_frequency * 1000
+
+        Distance = self.distance
+
+        a = self.peak_choice + 1
+
+        Fs = 196000
+
+        data = data / np.max(np.abs(data))
+        N = len(data)
+        t = np.arange(N) / Fs
+
+        f = np.fft.fftfreq(N, d=1/Fs)[:N//2]
+        fft_data = np.abs(np.fft.fft(data))[:N//2]
+
+        fft_data = fft_data.round(3) # By me!
+
+        mask = (f >= f_lower) & (f <= f_upper)
+        f_filtered = f[mask]
+        fft_data_filtered = fft_data[mask]
+
+        fft_data_filtered /= np.max(fft_data_filtered)
+
+        Dist = int(Distance / (Fs / N))
+
+        peaks, _ = find_peaks(fft_data_filtered, distance=Dist)
+
+        sorted_indices = np.argsort(fft_data_filtered[peaks])[::-1]
+        top_indices = peaks[sorted_indices[:min(3, len(peaks))]]
+        top_peaks = fft_data_filtered[top_indices]
+
+        a_index = a - 1
+        f0 = f_filtered[top_indices[a_index]]
+        peak_amp = top_peaks[a_index]
+        half_power = peak_amp / np.sqrt(2)
+
+        left_side = fft_data_filtered[:top_indices[a_index]]
+        left_cross = np.where(left_side <= half_power)[0]
+        left_cross = left_cross[-1] if left_cross.size > 0 else 0
+        f1 = f_filtered[left_cross]
+
+        right_side = fft_data_filtered[top_indices[a_index]:]
+
+        right_cross = np.where(right_side <= half_power)[0]
+        right_cross = (right_cross[0] + top_indices[a_index]) if right_cross.size > 0 else len(f_filtered) - 1
+        f2 = f_filtered[right_cross]
+
+        delta_f = f2 - f1
+        damping_ratio = delta_f / (2 * f0)
+        quality_factor = 1 / (2 * damping_ratio)
+
+        fig, ax = plt.subplots(layout='tight')
+
+        ax.plot(f_filtered, fft_data_filtered, 'r', linewidth=1.5)
+        ax.axvline(x=f0, color='k', linestyle='--', label='Resonance')
+        ax.axvline(x=f1, color='g', linestyle='--', label='Half-power')
+        ax.axvline(x=f2, color='g', linestyle='--')
+        ax.axhline(y=half_power, xmin=0, xmax=1, color='b', linestyle='--', label='Half-power level')  # xmin/xmax are in 0-1 scale
+        # ax.hlines(y=half_power, xmin=f_filtered[0], xmax=f_filtered[-1], color='b', linestyle='--', label='Half-power level')
+
+        ax.set_xlabel('Frequency (Hz)')
+        ax.set_ylabel('Amplitude')
+        # ax.set_title(f'Frequency Spectrum with Damping Measurement (ζ = {damping_ratio:.8f})')
+        ax.grid(True)
+        ax.legend()
+        ax.set_xlim([f1 - 2 * delta_f, f2 + 2 * delta_f])
+
+        self.ids.damping_plot.figure = fig
+
+        # print(f'Resonance Frequency (f0): {f0:.2f} Hz')
+        self.ids.f0_output.ids.label_field.text = f'{f0:.2f}'
+        # print(f'Half-Power Frequencies: {f1:.2f} Hz and {f2:.2f} Hz')
+        self.ids.f1_output.ids.label_field.text = f'{f1:.2f}'
+        self.ids.f2_output.ids.label_field.text = f'{f2:.2f}'
+        # print(f'Bandwidth (Δf): {delta_f:.2f} Hz')
+        self.ids.delta_f.ids.label_field.text = f'{delta_f:.2f}'
+        # print(f'Damping Ratio (ζ): {damping_ratio:.8f}')
+        self.ids.df.ids.label_field.text = f'{damping_ratio:.8f}'
+        # print(f'Quality Factor (Q): {quality_factor:.2f}')
+        self.ids.quality_factor.ids.label_field.text = f'{quality_factor:.2f}'
 
         self.update_calculation_button_status()
 
