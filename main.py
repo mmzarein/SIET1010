@@ -110,7 +110,7 @@ class LabelField(MDTextField):
 
     def on_touch_down(self, touch):
         if not self.collide_point(*touch.pos): return
-        # if isinstance(touch, MouseMotionEvent): return
+        if isinstance(touch, MouseMotionEvent): return
         if self.is_output: return
         self.prompt = Prompt(
             title=self.dialog_title,
@@ -251,10 +251,7 @@ class Navigator(MDScreenManager):
             'SIET1010', 'archive_path', fallback='Archive/SIET1010'
         )
 
-
-        # self.current = 'clavius'
-
-    def on_touch_down_bak(self, touch):
+    def on_touch_down(self, touch):
         if self.collide_point(*touch.pos):
             if not isinstance(touch, MouseMotionEvent):
                 super().on_touch_down(touch)
