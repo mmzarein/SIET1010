@@ -45,15 +45,17 @@ class ModulusScreen(MDScreen):
         self.update_calculation_button_status()
         self.empty_damping_plot()
 
-        if hasattr(self.ids.df.ids, 'unit_label') and self.ids.df.ids.unit_label.parent:
-            self.ids.df.ids.unit_label.parent.remove_widget(self.ids.df.ids.unit_label)
-            self.ids.df.ids.label_field.size_hint = (.5, None)
-            self.ids.df.ids.title_label.size_hint = (.5, None)
+        try:
+            if hasattr(self.ids.df.ids, 'unit_label') and self.ids.df.ids.unit_label.parent:
+                self.ids.df.ids.unit_label.parent.remove_widget(self.ids.df.ids.unit_label)
+                self.ids.df.ids.label_field.size_hint = (.5, None)
+                self.ids.df.ids.title_label.size_hint = (.5, None)
 
-        if hasattr(self.ids.quality_factor.ids, 'unit_label') and self.ids.quality_factor.ids.unit_label.parent:
-            self.ids.quality_factor.ids.unit_label.parent.remove_widget(self.ids.quality_factor.ids.unit_label)
-            self.ids.quality_factor.ids.label_field.size_hint = (.5, None)
-            self.ids.quality_factor.ids.title_label.size_hint = (.5, None)
+            if hasattr(self.ids.quality_factor.ids, 'unit_label') and self.ids.quality_factor.ids.unit_label.parent:
+                self.ids.quality_factor.ids.unit_label.parent.remove_widget(self.ids.quality_factor.ids.unit_label)
+                self.ids.quality_factor.ids.label_field.size_hint = (.5, None)
+                self.ids.quality_factor.ids.title_label.size_hint = (.5, None)
+        except Exception: pass
 
     def empty_damping_plot(self):
         fig, ax = plt.subplots(layout='constrained')
