@@ -1,14 +1,17 @@
 import json
 import os
+import numpy as np
 from datetime import datetime
+import matplotlib.pyplot as plt
 from kivymd.app import MDApp
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.tab.tab import MDTabsBase, MDTabs
 from kivymd.uix.floatlayout import MDFloatLayout
-from kivy.properties import StringProperty, ObjectProperty
+from kivy.properties import StringProperty, ObjectProperty, NumericProperty
 from kivymd.uix.button import MDFlatButton
 from kivymd.uix.textfield import MDTextField
 from kivymd.uix.dialog import MDDialog
+from scipy.signal import find_peaks
 
 
 class Tab(MDFloatLayout, MDTabsBase):
@@ -27,6 +30,7 @@ class TabContainer(MDTabs):
 class ModulusScreen(MDScreen):
     bar_choice = StringProperty('')
     rod_choice = StringProperty('')
+    peak_choice = NumericProperty(-1)
 
     def __ini__(self, **kwargs):
         super().__init__(**kwargs)
@@ -39,6 +43,25 @@ class ModulusScreen(MDScreen):
         self.tab = self.ids.tab_container.get_current_tab().title
         self.show_main_peak()
         self.update_calculation_button_status()
+        self.empty_damping_plot()
+
+        if hasattr(self.ids.df.ids, 'unit_label') and self.ids.df.ids.unit_label.parent:
+            self.ids.df.ids.unit_label.parent.remove_widget(self.ids.df.ids.unit_label)
+            self.ids.df.ids.label_field.size_hint = (.5, None)
+            self.ids.df.ids.title_label.size_hint = (.5, None)
+
+        if hasattr(self.ids.quality_factor.ids, 'unit_label') and self.ids.quality_factor.ids.unit_label.parent:
+            self.ids.quality_factor.ids.unit_label.parent.remove_widget(self.ids.quality_factor.ids.unit_label)
+            self.ids.quality_factor.ids.label_field.size_hint = (.5, None)
+            self.ids.quality_factor.ids.title_label.size_hint = (.5, None)
+
+    def empty_damping_plot(self):
+        fig, ax = plt.subplots(layout='constrained')
+        ax.grid()
+        ax.set_xlabel('Frequency (Hz)')
+        ax.set_ylabel('Amplitude')
+        # ax.set_title('Frequency Spectrum with Damping Measurement')
+        self.ids.damping_plot.figure = fig
 
     def change_bar_choice(self):
         bar_choices = {
@@ -94,6 +117,8 @@ class ModulusScreen(MDScreen):
             file_name = current_time.strftime(f"SIET1010_%Y-%m-%d_%H-%M-%S_ROD.json")
         elif self.tab == 'DISC':
             file_name = current_time.strftime(f"SIET1010_%Y-%m-%d_%H-%M-%S_DISC.json")
+        elif self.tab == 'DF':
+            file_name = current_time.strftime(f"SIET1010_%Y-%m-%d_%H-%M-%S_DF.json")
 
         self.save_dialog = MDDialog(
             title='File Name:',
@@ -180,6 +205,23 @@ class ModulusScreen(MDScreen):
             with open(os.path.join(self.manager.default, name), 'w') as f:
                 json.dump({'Inputs': inputs, 'Outputs': outputs}, f, indent=4)
 
+        elif self.tab == 'DF':
+            inputs = {
+                'peak': self.peak_choice
+            }
+
+            outputs = {
+                'f0': self.ids.f0_output.ids.label_field.text,
+                'f1': self.ids.f1_output.ids.label_field.text,
+                'f2': self.ids.f2_output.ids.label_field.text,
+                'Bandwidth': self.ids.delta_f.ids.label_field.text,
+                'Quality Factor': self.ids.quality_factor.ids.label_field.text,
+                'Damping Factor': self.ids.df.ids.label_field.text
+            }
+
+            with open(os.path.join(self.manager.default, name), 'w') as f:
+                json.dump({'Inputs': inputs, 'Outputs': outputs}, f, indent=4)
+
         self.save_dialog.dismiss()
 
     def reset(self):
@@ -252,6 +294,24 @@ class ModulusScreen(MDScreen):
             ]:
                 field.text = ''
 
+        elif self.tab == 'DF':
+            for btn in [
+                self.ids.first_peak_choice,
+                self.ids.second_peak_choice,
+                self.ids.third_peak_choice
+            ]:
+                btn.state = 'normal'
+            for field in [
+                self.ids.f0_output.ids.label_field,
+                self.ids.f1_output.ids.label_field,
+                self.ids.f2_output.ids.label_field,
+                self.ids.delta_f.ids.label_field,
+                self.ids.quality_factor.ids.label_field,
+                self.ids.df.ids.label_field,
+            ]:
+                field.text = ''
+
+            self.empty_damping_plot()
 
         self.update_calculation_button_status()
 
@@ -348,8 +408,29 @@ class ModulusScreen(MDScreen):
             calculate_button.disabled = not all(fields)
             reset_button.disabled = not any(fields)
 
-            self.ids.modulus_panel.ids.right_button.disabled = not any(
-                output_fields)
+            self.ids.modulus_panel.ids.right_button.disabled = not any(output_fields)
+
+        elif self.tab == 'DF':
+            calculate_button = self.ids.df_calculation_btn
+            reset_button = self.ids.df_reset_btn
+
+            fields = [
+                bool(self.peak_choice != -1)
+            ]
+
+            output_fields = [
+                bool(self.ids.f0_output.ids.label_field.text),
+                bool(self.ids.f1_output.ids.label_field.text),
+                bool(self.ids.f2_output.ids.label_field.text),
+                bool(self.ids.delta_f.ids.label_field.text),
+                bool(self.ids.quality_factor.ids.label_field.text),
+                bool(self.ids.df.ids.label_field.text)
+            ]
+
+            calculate_button.disabled = not all(fields)
+            reset_button.disabled = not any(fields)
+
+            self.ids.modulus_panel.ids.right_button.disabled = not any(output_fields)
 
     def bar_calculation(self):
         inputs = {
