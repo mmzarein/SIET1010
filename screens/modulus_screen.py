@@ -451,8 +451,10 @@ class ModulusScreen(MDScreen):
         thickness = float(inputs['thickness'])
         mass = float(inputs['mass'])
         initial_poisson_ratio = float(inputs['initial_poisson_ratio'])
-        flexural_frequency = float(inputs['flexural_frequency'])
-        torsional_frequency = float(inputs['torsional_frequency'])
+        if inputs['flexural_frequency'] != '':
+            flexural_frequency = float(inputs['flexural_frequency'])
+        if inputs['torsional_frequency'] != '':
+            torsional_frequency = float(inputs['torsional_frequency'])
 
         errors = []
 
@@ -474,11 +476,13 @@ class ModulusScreen(MDScreen):
         if not (0 < initial_poisson_ratio < 1):
             errors.append('- Poisson ratio must be between 0 and 1.')
 
-        if not (0 < flexural_frequency < 24):
-            errors.append('- Flexural frequency must be between 0 and 24.')
+        if inputs['flexural_frequency'] != '':
+            if not (0.02 < flexural_frequency < 24):
+                errors.append('- Flexural frequency must be between 0.02 and 24.')
 
-        if not (0 < torsional_frequency < 24):
-            errors.append('- Torsional frequency must be between 0 and 24.')
+        if inputs['torsional_frequency'] != '':
+            if not (0.02 < torsional_frequency < 24):
+                errors.append('- Torsional frequency must be between 0.02 and 24.')
 
         if errors:
             self.bar_error_dialog = MDDialog(
@@ -516,8 +520,12 @@ class ModulusScreen(MDScreen):
         diameter = float(inputs['diameter'])
         mass = float(inputs['mass'])
         initial_poisson_ratio = float(inputs['initial_poisson_ratio'])
-        flexural_frequency = float(inputs['flexural_frequency'])
-        torsional_frequency = float(inputs['torsional_frequency'])
+
+        if inputs['flexural_frequency'] != '':
+            flexural_frequency = float(inputs['flexural_frequency'])
+
+        if inputs['torsional_frequency'] != '':
+            torsional_frequency = float(inputs['torsional_frequency'])
 
         errors = []
 
@@ -536,11 +544,13 @@ class ModulusScreen(MDScreen):
         if not (0 < initial_poisson_ratio < 1):
             errors.append('- Poisson ratio must be between 0 and 1.')
 
-        if not (0 < flexural_frequency < 24):
-            errors.append('- Flexural frequency must be between 0 and 24.')
+        if inputs['flexural_frequency'] != '':
+            if not (0.02 < flexural_frequency < 24):
+                errors.append('- Flexural frequency must be between 0.02 and 24.')
 
-        if not (0 < torsional_frequency < 24):
-            errors.append('- Torsional frequency must be between 0 and 24.')
+        if inputs['torsional_frequency'] != '':
+            if not (0.02 < torsional_frequency < 24):
+                errors.append('- Torsional frequency must be between 0.02 and 24.')
 
         if errors:
             self.rod_error_dialog = MDDialog(
@@ -593,11 +603,11 @@ class ModulusScreen(MDScreen):
         if not (0 < thickness <= 1000):
             errors.append('- Thickness must be between 0 and 1000.')
 
-        if not (0 < first_frequency < 24):
-            errors.append('- First frequency must be between 0 and 24.')
+        if not (0.02 < first_frequency < 24):
+            errors.append('- First frequency must be between 0.02 and 24.')
 
-        if not (0 < second_frequency < 24):
-            errors.append('- Second frequency must be between 0 and 24.')
+        if not (0.02 < second_frequency < 24):
+            errors.append('- Second frequency must be between 0.02 and 24.')
 
 
         if errors:
