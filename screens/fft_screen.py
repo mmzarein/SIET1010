@@ -43,8 +43,8 @@ class FFTScreen(MDScreen):
         sp = self.manager.app.signal_processor
 
         # Use only positive frequencies
-        freq = sp.fft_freqs[:len(sp.fft_data)//2]
-        mag = np.abs(sp.fft_data[:len(sp.fft_data)//2])
+        freq = sp.fft_freqs[:len(sp.fft_data)]
+        mag = np.abs(sp.fft_data[:len(sp.fft_data)])
 
         # Normalize magnitude (optional, like in your plots)
         mag = mag / np.max(mag)
