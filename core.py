@@ -159,7 +159,11 @@ class SignalProcessor:
 
         # Plot the peaks within the same range
         peak_freqs = self.fft_frequencies[self.peaks]
-        peak_amps = self.fft_magnitude[self.peaks] / np.max(self.fft_magnitude)
+
+        # peak_amps = self.fft_magnitude[self.peaks] / np.max(self.fft_magnitude)
+
+        peak_amps = self.fft_magnitude[self.peaks]
+
         peak_mask = (peak_freqs >= self.low_bound) & (peak_freqs <= self.high_bound)
         fft_ax.scatter(
             peak_freqs[peak_mask],
