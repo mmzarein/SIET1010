@@ -1,9 +1,10 @@
 import time
-import pyaudio
-import numpy as np
+
 import matplotlib.pyplot as plt
-from scipy.signal import find_peaks
+import numpy as np
+import pyaudio
 from kivy.clock import Clock
+from scipy.signal import find_peaks
 
 # Configuration Constants
 CHUNK_SIZE = 1024  # Samples per buffer chunk
@@ -68,8 +69,10 @@ class SignalProcessor:
 
     def get_peaks(self):
         """Find the peaks in the single-sided magnitude spectrum within the specified frequency bounds."""
-        self.fft_magnitude = np.abs(self.fft_data)[: len(self.fft_data) // 2]
-        self.fft_frequencies = self.fft_freqs[: len(self.fft_data) // 2]
+        self.fft_magnitude = np.abs(self.fft_data)[: len(self.fft_data)]
+        self.fft_frequencies = self.fft_freqs[: len(self.fft_data)]
+
+        print('-------------->', self.fft_frequencies)
 
         # Frequency resolution of FFT (Hz per bin)
         freq_resolution = self.sample_rate / len(self.fft_data)
@@ -91,6 +94,8 @@ class SignalProcessor:
 
         # Find peaks in the masked magnitude
         peaks_local, _ = find_peaks(masked_magnitude, distance=index_distance)
+        # print('===========>', peaks_local)
+
 
         # Map back to original indices
         peaks = masked_indices[peaks_local]
@@ -98,6 +103,8 @@ class SignalProcessor:
         # Sort peaks by amplitude and keep top 3
         sorted_indices = np.argsort(self.fft_magnitude[peaks])[::-1]
         self.peaks = peaks[sorted_indices[:3]]
+
+        # print(self.peaks)
 
         return self.peaks
 
